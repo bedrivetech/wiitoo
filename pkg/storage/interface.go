@@ -40,6 +40,20 @@ type ObjectStore interface {
 
 	// MultipartComplete completes a multipart upload.
 	MultipartComplete(ctx context.Context, bucket, key, uploadID string, parts []MultipartPart) error
+
+	// ProviderName returns the friendly name of this provider.
+	ProviderName() string
+
+	// HealthCheck checks whether the provider is reachable and operational.
+	HealthCheck(ctx context.Context) error
+}
+
+// Region describes a storage region for a provider.
+type Region struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Endpoint string `json:"endpoint"`
+	Location string `json:"location"` // geo hint: "us-east", "eu-west", "ap-southeast"
 }
 
 // ObjectInfo describes a stored object.

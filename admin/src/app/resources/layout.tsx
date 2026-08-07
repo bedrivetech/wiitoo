@@ -15,6 +15,9 @@ import {
   TeamOutlined,
   FileTextOutlined,
   MailOutlined,
+  HddOutlined,
+  FolderOutlined,
+  SwapOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -36,17 +39,65 @@ const menuItems = [
   { key: "/resources/payouts", icon: <BankOutlined />, label: "Payouts" },
   { key: "/resources/subscriptions", icon: <TeamOutlined />, label: "Subscriptions" },
   { key: "/resources/templates", icon: <FileTextOutlined />, label: "Templates" },
-  { key: "/resources/email", icon: <MailOutlined />, label: "Email" },
+  {
+    key: "/resources/email",
+    icon: <MailOutlined />,
+    label: "Email",
+  },
+  {
+    key: "storage",
+    icon: <HddOutlined />,
+    label: "Storage",
+    children: [
+      {
+        key: "/resources/storage/providers",
+        icon: <HddOutlined />,
+        label: "Providers",
+      },
+      {
+        key: "/resources/storage/buckets",
+        icon: <FolderOutlined />,
+        label: "Buckets",
+      },
+      {
+        key: "/resources/storage/routing",
+        icon: <SwapOutlined />,
+        label: "Routing",
+      },
+    ],
+  },
 ];
 
 function getSelectedKey(pathname: string): string {
   // Match the resource part of the path
   for (const item of menuItems) {
-    if (pathname.startsWith(item.key)) {
+    // Handle nested items
+    if (item.children) {
+      for (const child of item.children) {
+        if (pathname.startsWith(child.key)) {
+          return child.key;
+        }
+      }
+    }
+    if (item.key && pathname.startsWith(item.key)) {
       return item.key;
     }
   }
   return "/resources/users";
+}
+
+function getOpenKeys(pathname: string): string[] {
+  const keys: string[] = [];
+  for (const item of menuItems) {
+    if (item.children) {
+      for (const child of item.children) {
+        if (pathname.startsWith(child.key)) {
+          keys.push(item.key);
+        }
+      }
+    }
+  }
+  return keys;
 }
 
 export default function ResourcesLayout({
@@ -58,6 +109,7 @@ export default function ResourcesLayout({
   const pathname = usePathname();
   const router = useRouter();
   const selectedKey = getSelectedKey(pathname);
+  const openKeys = getOpenKeys(pathname);
   const { data: identity } = useGetIdentity<any>();
 
   const handleMenuClick = (info: { key: string }) => {
@@ -113,6 +165,7 @@ export default function ResourcesLayout({
           theme="dark"
           mode="inline"
           selectedKeys={[selectedKey]}
+          defaultOpenKeys={openKeys}
           items={menuItems}
           onClick={handleMenuClick}
         />

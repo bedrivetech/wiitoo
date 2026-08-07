@@ -9,5 +9,6 @@ use (
 	./services/notification
 	./services/payment
 	./services/stream
+	./services/storage
 	./services/video
 )

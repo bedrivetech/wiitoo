@@ -18,7 +18,8 @@ import (
 // S3Store implements ObjectStore for any S3-compatible API.
 // Works with: AWS S3, Cloudflare R2, GCS (S3 compat), MinIO, Backblaze B2.
 type S3Store struct {
-	client *s3.Client
+	client       *s3.Client
+	providerName string
 }
 
 // S3Config holds connection details for an S3-compatible provider.
@@ -47,7 +48,7 @@ func NewS3Store(cfg S3Config) (*S3Store, error) {
 		o.UsePathStyle = true
 	})
 
-	return &S3Store{client: client}, nil
+	return &S3Store{client: client, providerName: "s3"}, nil
 }
 
 func (s *S3Store) Upload(ctx context.Context, bucket, key string, r io.Reader, opts ...UploadOption) error {
@@ -255,6 +256,22 @@ func (s *S3Store) MultipartComplete(ctx context.Context, bucket, key, uploadID s
 		return fmt.Errorf("s3 multipart complete failed: %w", err)
 	}
 	return nil
+}
+
+// ProviderName returns the configured provider name.
+func (s *S3Store) ProviderName() string {
+	return s.providerName
+}
+
+// SetProviderName sets the provider name for identification.
+func (s *S3Store) SetProviderName(name string) {
+	s.providerName = name
+}
+
+// HealthCheck checks whether the S3-compatible provider is reachable.
+func (s *S3Store) HealthCheck(ctx context.Context) error {
+	_, err := s.client.ListBuckets(ctx, &s3.ListBucketsInput{})
+	return err
 }
 
 // ErrObjectNotFound is returned when a storage object doesn't exist.
