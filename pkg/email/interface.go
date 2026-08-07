@@ -1,7 +1,10 @@
 // Package email provides a provider-agnostic email sending interface.
 package email
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // Sender is the interface for sending transactional emails.
 type Sender interface {

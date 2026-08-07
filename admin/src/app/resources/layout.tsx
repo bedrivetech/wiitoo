@@ -14,6 +14,7 @@ import {
   BankOutlined,
   TeamOutlined,
   FileTextOutlined,
+  MailOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -35,6 +36,7 @@ const menuItems = [
   { key: "/resources/payouts", icon: <BankOutlined />, label: "Payouts" },
   { key: "/resources/subscriptions", icon: <TeamOutlined />, label: "Subscriptions" },
   { key: "/resources/templates", icon: <FileTextOutlined />, label: "Templates" },
+  { key: "/resources/email", icon: <MailOutlined />, label: "Email" },
 ];
 
 function getSelectedKey(pathname: string): string {

@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
+
+	"github.com/fusion-platform/pkg/email"
 )
 
 // EmailSender provides an interface for sending emails.
@@ -12,54 +14,72 @@ type EmailSender interface {
 }
 
 // ConsoleEmailSender logs emails to stdout (for development).
+// Wraps pkg/email.ConsoleSender.
 type ConsoleEmailSender struct {
-	fromName  string
-	fromEmail string
+	inner *email.ConsoleSender
 }
 
+// NewConsoleEmailSender creates a new ConsoleEmailSender.
 func NewConsoleEmailSender(fromName, fromEmail string) *ConsoleEmailSender {
 	return &ConsoleEmailSender{
-		fromName:  fromName,
-		fromEmail: fromEmail,
+		inner: email.NewConsoleSender(fromName, fromEmail),
 	}
 }
 
 func (s *ConsoleEmailSender) SendEmail(ctx context.Context, to, subject, text, html string) error {
-	slog.Info("📧 EMAIL (dev)",
-		"to", to,
-		"subject", subject,
-		"text_body", text,
-	)
-	return nil
+	return s.inner.Send(ctx, email.SendRequest{
+		To:       to,
+		Subject:  subject,
+		TextBody: text,
+		HTMLBody: html,
+	})
 }
 
 // ResendEmailSender sends emails via the Resend API.
+// Wraps pkg/email.ResendSender.
 type ResendEmailSender struct {
-	apiKey    string
-	fromName  string
-	fromEmail string
+	inner *email.ResendSender
 }
 
+// NewResendEmailSender creates a new ResendEmailSender.
 func NewResendEmailSender(apiKey, fromName, fromEmail string) *ResendEmailSender {
 	return &ResendEmailSender{
-		apiKey:    apiKey,
-		fromName:  fromName,
-		fromEmail: fromEmail,
+		inner: email.NewResendSender(email.ResendConfig{
+			APIKey:    apiKey,
+			FromName:  fromName,
+			FromEmail: fromEmail,
+		}),
 	}
 }
 
 func (s *ResendEmailSender) SendEmail(ctx context.Context, to, subject, text, html string) error {
-	// TODO: Implement Resend API call
-	// This is a stub — actual implementation requires Resend Go SDK or raw HTTP call.
-	return nil
+	return s.inner.Send(ctx, email.SendRequest{
+		To:       to,
+		Subject:  subject,
+		TextBody: text,
+		HTMLBody: html,
+	})
+}
+
+// SendEmailViaSender is a helper that sends an email using any pkg/email.Sender.
+// Useful for injecting a generic Sender where EmailSender is expected.
+func SendEmailViaSender(ctx context.Context, sender email.Sender, to, subject, text, html string) error {
+	return sender.Send(ctx, email.SendRequest{
+		To:       to,
+		Subject:  subject,
+		TextBody: text,
+		HTMLBody: html,
+	})
 }
 
 // OTPEmailBuilder builds email content for OTP-related messages.
+// This is kept for backward compatibility — new code should use pkg/email.Builder.
 type OTPEmailBuilder struct {
 	appName string
 	baseURL string
 }
 
+// NewOTPEmailBuilder creates a new OTPEmailBuilder.
 func NewOTPEmailBuilder(appName, baseURL string) *OTPEmailBuilder {
 	return &OTPEmailBuilder{
 		appName: appName,
@@ -120,3 +140,8 @@ func (b *OTPEmailBuilder) EmailChangeNew(code, oldEmail string) (subject, text, 
 		"<p>This code expires in 10 minutes.</p>"
 	return
 }
+
+// Ensure interfaces are satisfied at compile time.
+var _ EmailSender = (*ConsoleEmailSender)(nil)
+var _ EmailSender = (*ResendEmailSender)(nil)
+var _ = fmt.Sprintf // keep fmt import available for potential future use
