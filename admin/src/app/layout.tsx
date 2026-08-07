@@ -48,7 +48,8 @@ export default function RootLayout({
                   name: "users",
                   list: "/resources/users",
                   create: "/resources/users/create",
-                  edit: "/resources/users/:id",
+                  show: "/resources/users/:id",
+                  edit: "/resources/users/:id/edit",
                   meta: { label: "Users" },
                 },
                 {
@@ -67,18 +68,21 @@ export default function RootLayout({
                 {
                   name: "chat-messages",
                   list: "/resources/chat-messages",
+                  show: "/resources/chat-messages/:id",
                   meta: { label: "Chat Messages" },
                 },
                 {
                   name: "categories",
                   list: "/resources/categories",
                   create: "/resources/categories/create",
-                  edit: "/resources/categories/:id",
+                  show: "/resources/categories/:id",
+                  edit: "/resources/categories/:id/edit",
                   meta: { label: "Categories" },
                 },
                 {
                   name: "reports",
                   list: "/resources/reports",
+                  show: "/resources/reports/:id",
                   meta: { label: "Reports" },
                 },
                 {
@@ -110,6 +114,7 @@ export default function RootLayout({
                 {
                   name: "creator-verification",
                   list: "/resources/creator-verification",
+                  show: "/resources/creator-verification/:id",
                   meta: { label: "Creator Verification" },
                 },
               ]}

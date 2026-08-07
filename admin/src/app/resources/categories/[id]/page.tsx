@@ -1,55 +1,69 @@
 "use client";
 
-import { useOne, useUpdate } from "@refinedev/core";
+import { useOne, useCustomMutation, useApiUrl } from "@refinedev/core";
 import { useParams, useRouter } from "next/navigation";
 import {
   Card,
-  Form,
-  Input,
+  Descriptions,
+  Tag,
   Button,
   Space,
   Typography,
   Spin,
   message,
+  Popconfirm,
 } from "antd";
-import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  TagOutlined,
+} from "@ant-design/icons";
 
 const { Title } = Typography;
 
-export default function CategoriesEdit() {
+const activeColors: Record<string, string> = {
+  true: "green",
+  false: "default",
+};
+
+export default function CategoriesShow() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const [form] = Form.useForm();
+  const apiUrl = useApiUrl();
 
-  const { query, result } = useOne({
+  const { query, result: category } = useOne({
     resource: "categories",
     id,
   });
 
-  const { mutate: update, mutation: updateMutation } = useUpdate();
-
-  const handleFinish = (values: any) => {
-    update(
-      {
-        resource: "categories",
-        id,
-        values,
+  const handleDelete = () => {
+    const token = localStorage.getItem("access_token");
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    fetch(`${API_BASE}/api/v1/admin/categories/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      {
-        onSuccess: () => {
-          message.success("Category updated successfully");
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success) {
+          message.success("Category deleted");
           router.push("/resources/categories");
-        },
-        onError: (error: any) => {
-          message.error(error?.message || "Failed to update category");
-        },
-      }
-    );
+        } else {
+          message.error(json.error?.message || "Failed to delete category");
+        }
+      })
+      .catch((err) => {
+        message.error(err.message || "Failed to delete category");
+      });
   };
 
-  const category = result;
   const isLoading = query.isLoading;
+  const c = category as any;
 
   if (isLoading) {
     return (
@@ -57,6 +71,17 @@ export default function CategoriesEdit() {
         <div style={{ textAlign: "center", padding: 40 }}>
           <Spin size="large" />
         </div>
+      </Card>
+    );
+  }
+
+  if (!c) {
+    return (
+      <Card>
+        <Title level={4}>Category not found</Title>
+        <Button onClick={() => router.push("/resources/categories")}>
+          Back to Categories
+        </Button>
       </Card>
     );
   }
@@ -72,53 +97,65 @@ export default function CategoriesEdit() {
             Back
           </Button>
           <Title level={4} style={{ margin: 0 }}>
-            Edit Category: {category?.name || id}
+            <TagOutlined /> Category: {c.name || id}
           </Title>
         </Space>
 
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{
-            name: category?.name || "",
-            description: category?.description || "",
-            thumbnail: category?.thumbnail || "",
-          }}
-          onFinish={handleFinish}
-          style={{ maxWidth: 500 }}
-        >
-          <Form.Item
-            label="Name"
-            name="name"
-            rules={[{ required: true, message: "Please enter a category name" }]}
+        <Descriptions bordered column={2} size="small">
+          <Descriptions.Item label="ID" span={2}>
+            {c.id}
+          </Descriptions.Item>
+          <Descriptions.Item label="Name" span={2}>
+            <Title level={5} style={{ margin: 0 }}>{c.name}</Title>
+          </Descriptions.Item>
+          <Descriptions.Item label="Description" span={2}>
+            {c.description || "-"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Sort Order">
+            {c.sort_order ?? 0}
+          </Descriptions.Item>
+          <Descriptions.Item label="Active">
+            <Tag color={activeColors[String(c.active)]}>
+              {c.active ? "Yes" : "No"}
+            </Tag>
+          </Descriptions.Item>
+          <Descriptions.Item label="Parent Category">
+            {c.parent_category_id ? c.parent_category_id.substring(0, 12) : "None"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Thumbnail">
+            {c.thumbnail ? (
+              <a href={c.thumbnail} target="_blank" rel="noopener noreferrer">
+                View Image
+              </a>
+            ) : (
+              "-"
+            )}
+          </Descriptions.Item>
+          <Descriptions.Item label="Created At">
+            {c.created_at ? new Date(c.created_at).toLocaleString() : "-"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Updated At">
+            {c.updated_at ? new Date(c.updated_at).toLocaleString() : "-"}
+          </Descriptions.Item>
+        </Descriptions>
+
+        <Space>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => router.push(`/resources/categories/${id}/edit`)}
           >
-            <Input placeholder="Category name" />
-          </Form.Item>
-
-          <Form.Item label="Description" name="description">
-            <Input.TextArea rows={3} placeholder="Category description" />
-          </Form.Item>
-
-          <Form.Item label="Thumbnail URL" name="thumbnail">
-            <Input placeholder="https://example.com/thumbnail.jpg" />
-          </Form.Item>
-
-          <Form.Item>
-            <Space>
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SaveOutlined />}
-                loading={updateMutation.isPending}
-              >
-                Save Changes
-              </Button>
-              <Button onClick={() => router.push("/resources/categories")}>
-                Cancel
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
+            Edit Category
+          </Button>
+          <Popconfirm
+            title="Delete this category?"
+            onConfirm={handleDelete}
+          >
+            <Button danger icon={<DeleteOutlined />}>
+              Delete Category
+            </Button>
+          </Popconfirm>
+        </Space>
       </Space>
     </Card>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTable } from "@refinedev/core";
+import { useTable, useNavigation } from "@refinedev/core";
 import {
   Table,
   Button,
@@ -16,11 +16,13 @@ import {
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
+  EyeOutlined,
   FlagOutlined,
 } from "@ant-design/icons";
 import { useState } from "react";
 
 const { Title } = Typography;
+const { show } = useNavigation();
 
 const statusColors: Record<string, string> = {
   pending: "gold",
@@ -136,29 +138,39 @@ export default function ReportsList() {
     {
       title: "Actions",
       key: "actions",
-      width: 200,
-      render: (_: any, record: any) =>
-        record.status === "pending" ? (
-          <Space>
-            <Button
-              type="primary"
-              size="small"
-              icon={<CheckCircleOutlined />}
-              onClick={() => handleUpdateStatus(record.id, "resolved")}
-            >
-              Resolve
-            </Button>
-            <Button
-              size="small"
-              icon={<CloseCircleOutlined />}
-              onClick={() => handleUpdateStatus(record.id, "dismissed")}
-            >
-              Dismiss
-            </Button>
-          </Space>
-        ) : (
-          <Tag color={statusColors[record.status]}>{record.status}</Tag>
-        ),
+      width: 280,
+      render: (_: any, record: any) => (
+        <Space>
+          <Button
+            type="primary"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => show("reports", record.id)}
+          >
+            View
+          </Button>
+          {record.status === "pending" ? (
+            <>
+              <Button
+                size="small"
+                icon={<CheckCircleOutlined />}
+                onClick={() => handleUpdateStatus(record.id, "resolved")}
+              >
+                Resolve
+              </Button>
+              <Button
+                size="small"
+                icon={<CloseCircleOutlined />}
+                onClick={() => handleUpdateStatus(record.id, "dismissed")}
+              >
+                Dismiss
+              </Button>
+            </>
+          ) : (
+            <Tag color={statusColors[record.status]}>{record.status}</Tag>
+          )}
+        </Space>
+      ),
     },
   ];
 

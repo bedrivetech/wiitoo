@@ -1,6 +1,6 @@
 "use client";
 
-import { useTable, useDelete } from "@refinedev/core";
+import { useTable, useDelete, useNavigation } from "@refinedev/core";
 import {
   Table,
   Button,
@@ -23,10 +23,12 @@ import {
   MessageOutlined,
   BlockOutlined,
   ClearOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { useState } from "react";
 
 const { Title } = Typography;
+const { show } = useNavigation();
 
 export default function ChatMessagesList() {
   const [search, setSearch] = useState("");
@@ -160,9 +162,16 @@ export default function ChatMessagesList() {
     {
       title: "Actions",
       key: "actions",
-      width: 120,
+      width: 200,
       render: (_: any, record: any) => (
         <Space>
+          <Button
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => show("chat-messages", record.id)}
+          >
+            View
+          </Button>
           <Popconfirm
             title="Delete this message?"
             onConfirm={() => handleDelete(record.id)}

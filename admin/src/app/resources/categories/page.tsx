@@ -17,12 +17,13 @@ import {
   DeleteOutlined,
   PlusOutlined,
   TagOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 
 const { Title } = Typography;
 
 export default function CategoriesList() {
-  const { edit, create } = useNavigation();
+  const { edit, create, show } = useNavigation();
 
   const { tableQuery, currentPage, setCurrentPage, pageSize, setPageSize } =
     useTable({
