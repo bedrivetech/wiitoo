@@ -1,6 +1,6 @@
 "use client";
 
-import { useTable } from "@refinedev/core";
+import { useTable, useNavigation } from "@refinedev/core";
 import {
   Table,
   Button,
@@ -14,6 +14,7 @@ import {
   message,
 } from "antd";
 import {
+  EyeOutlined,
   StopOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
@@ -28,6 +29,8 @@ const statusColors: Record<string, string> = {
 };
 
 export default function SubscriptionsList() {
+  const { show } = useNavigation();
+
   const { tableQuery, currentPage, setCurrentPage, pageSize, setPageSize } =
     useTable({
       resource: "subscriptions",
@@ -118,21 +121,30 @@ export default function SubscriptionsList() {
     {
       title: "Actions",
       key: "actions",
-      width: 120,
-      render: (_: any, record: any) =>
-        record.status === "active" ? (
-          <Popconfirm
-            title="Cancel this subscription?"
-            description="This will cancel the subscription immediately."
-            onConfirm={() => handleCancel(record.id)}
+      width: 160,
+      render: (_: any, record: any) => (
+        <Space>
+          <Button
+            type="primary"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => show("subscriptions", record.id)}
           >
-            <Button danger size="small" icon={<StopOutlined />}>
-              Cancel
-            </Button>
-          </Popconfirm>
-        ) : (
-          <Tag>{record.status}</Tag>
-        ),
+            View
+          </Button>
+          {record.status === "active" && (
+            <Popconfirm
+              title="Cancel this subscription?"
+              description="This will cancel the subscription immediately."
+              onConfirm={() => handleCancel(record.id)}
+            >
+              <Button danger size="small" icon={<StopOutlined />}>
+                Cancel
+              </Button>
+            </Popconfirm>
+          )}
+        </Space>
+      ),
     },
   ];
 

@@ -47,6 +47,7 @@ export default function RootLayout({
                 {
                   name: "users",
                   list: "/resources/users",
+                  create: "/resources/users/create",
                   edit: "/resources/users/:id",
                   meta: { label: "Users" },
                 },
@@ -89,12 +90,14 @@ export default function RootLayout({
                 {
                   name: "payouts",
                   list: "/resources/payouts",
+                  show: "/resources/payouts/:id",
                   create: "/resources/payouts/create",
                   meta: { label: "Payouts" },
                 },
                 {
                   name: "subscriptions",
                   list: "/resources/subscriptions",
+                  show: "/resources/subscriptions/:id",
                   meta: { label: "Subscriptions" },
                 },
                 {
