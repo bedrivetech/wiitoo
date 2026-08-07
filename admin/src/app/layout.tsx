@@ -107,6 +107,11 @@ export default function RootLayout({
                   edit: "/resources/templates/:id",
                   meta: { label: "Templates" },
                 },
+                {
+                  name: "creator-verification",
+                  list: "/resources/creator-verification",
+                  meta: { label: "Creator Verification" },
+                },
               ]}
             >
               {children}

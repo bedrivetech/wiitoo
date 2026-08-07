@@ -164,6 +164,51 @@ func (e *APIError) Error() string {
 	return e.Code + ": " + e.Message
 }
 
+// UserProfile extends User with admin-relevant metadata.
+type UserProfile struct {
+	User
+	LoginCount       int        `json:"loginCount"`
+	LastLoginAt      *time.Time `json:"lastLoginAt"`
+	LastIP           string     `json:"lastIP"`
+	EmailVerified    bool       `json:"emailVerified"`
+	TwoFactorEnabled bool       `json:"twoFactorEnabled"`
+	BanHistory       []BanEntry `json:"banHistory,omitempty"`
+	Notes            string     `json:"notes,omitempty"` // admin notes
+	CreatorVerified  bool       `json:"creatorVerified"` // KYC passed
+	CreatorAppliedAt *time.Time `json:"creatorAppliedAt"`
+	TotalStreams     int        `json:"totalStreams"`
+	TotalFollowers   int        `json:"totalFollowers"`
+	TotalEarned      float64    `json:"totalEarned"`
+}
+
+// BanEntry tracks suspension/bans on a user account.
+type BanEntry struct {
+	ID        string     `json:"id"`
+	Reason    string     `json:"reason"`
+	BannedBy  string     `json:"bannedBy"` // admin user ID
+	Duration  *int       `json:"duration"` // hours, nil = permanent
+	Note      string     `json:"note"`
+	Active    bool       `json:"active"`
+	CreatedAt time.Time  `json:"createdAt"`
+	RemovedAt *time.Time `json:"removedAt"` // when ban was lifted
+}
+
+// CreatorVerificationRequest represents a creator application.
+type CreatorVerificationRequest struct {
+	ID         string     `json:"id"`
+	UserID     string     `json:"userId"`
+	Status     string     `json:"status"` // pending, approved, rejected
+	Documents  []byte     `json:"documents,omitempty"`
+	Notes      string     `json:"notes,omitempty"`
+	ReviewedBy *string    `json:"reviewedBy,omitempty"`
+	ReviewedAt *time.Time `json:"reviewedAt,omitempty"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	UpdatedAt  time.Time  `json:"updatedAt"`
+	// Joined fields
+	UserEmail    string `json:"userEmail,omitempty"`
+	UserUsername string `json:"userUsername,omitempty"`
+}
+
 // Standard error codes
 const (
 	ErrCodeInvalidCredentials   = "INVALID_CREDENTIALS"

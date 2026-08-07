@@ -142,10 +142,31 @@ func main() {
 		r.Use(authMiddleware.Authenticate)
 		r.Use(authMiddleware.RequireRole(model.RoleAdmin))
 
+		// User management
 		r.Get("/users", adminHandler.ListUsers)
 		r.Get("/users/{id}", adminHandler.GetUser)
 		r.Patch("/users/{id}", adminHandler.UpdateUser)
 		r.Delete("/users/{id}", adminHandler.DeleteUser)
+
+		// User profile & extended management
+		r.Get("/users/profile/{id}", adminHandler.GetUserProfile)
+		r.Post("/users/{id}/ban", adminHandler.BanUser)
+		r.Post("/users/{id}/unban", adminHandler.UnbanUser)
+		r.Put("/users/{id}/notes", adminHandler.UpdateUserNotes)
+		r.Put("/users/{id}/role", adminHandler.UpdateUserRole)
+		r.Put("/users/{id}/verify", adminHandler.SetCreatorVerified)
+
+		// Bulk operations
+		r.Post("/users/bulk/status", adminHandler.BulkUpdateStatus)
+		r.Post("/users/bulk/role", adminHandler.BulkAssignRole)
+
+		// Export
+		r.Get("/users/export", adminHandler.ExportUsersCSV)
+
+		// Creator verification
+		r.Get("/creator-verification", adminHandler.ListCreatorVerificationRequests)
+		r.Post("/creator-verification/{id}/approve", adminHandler.ApproveCreatorVerification)
+		r.Post("/creator-verification/{id}/reject", adminHandler.RejectCreatorVerification)
 	})
 
 	// Create server
