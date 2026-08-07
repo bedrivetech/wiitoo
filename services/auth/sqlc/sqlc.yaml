@@ -1,0 +1,29 @@
+# sqlc configuration for the auth service.
+# Run `sqlc generate` to compile queries into Go code.
+
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "queries.sql"
+    schema:
+      - "../migrations/001_create_users.sql"
+      - "../migrations/002_create_oauth_accounts.sql"
+    gen:
+      go:
+        package: "repository"
+        out: "../internal/repository/sqlc"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_prepared_queries: false
+        emit_interface: true
+        emit_exact_table_names: false
+        emit_empty_slices: true
+        overrides:
+          - db_type: "uuid"
+            go_type:
+              type: "string"
+          - db_type: "timestamptz"
+            go_type:
+              type: "time.Time"
+              pointer: true
+              nullable: true

@@ -1,0 +1,41 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.out
+*.test
+*.test.exe
+*.test-*
+/tmp/
+
+# Go
+vendor/
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Build
+dist/
+build/
+/target/
+
+# Docker
+.docker/
+
+# sqlc generated
+services/*/sqlc/db/
+services/*/sqlc/models/
