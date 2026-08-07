@@ -52,16 +52,13 @@ type TaskHandler func(ctx context.Context, task Task) error
 
 // Standard task types used across the platform.
 const (
-	TaskTypeTranscodeVideo   = "transcode:video"
-	TaskTypeTranscodeClip    = "transcode:clip"
-	TaskTypeEmailSend        = "email:send"
+	TaskTypeVideoProcess    = "video:process"     // Cloud pipeline processing complete
+	TaskTypeEmailSend       = "email:send"
 	TaskTypeNotifySubscriber = "notify:subscriber"
-	TaskTypePayoutProcess    = "payout:process"
-	TaskTypeSimulcastPush    = "simulcast:push"
-	TaskTypeModerationScan   = "moderation:scan"
+	TaskTypePayoutProcess   = "payout:process"
+	TaskTypeSimulcastPush   = "simulcast:push"
+	TaskTypeModerationScan  = "moderation:scan"
 	TaskTypeAnalyticsProcess = "analytics:process"
-	TaskTypeVODArchive       = "vod:archive"
-	TaskTypeThumbnailGenerate = "thumbnail:generate"
 )
 
 // Payload types (JSON-encodable structs for each task type).

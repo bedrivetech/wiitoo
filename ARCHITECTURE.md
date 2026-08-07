@@ -20,7 +20,7 @@ Live-first, VOD-native, creator-wealthy, AI-moderated, multi-platform by default
 | **Cache / Pub/Sub** | Redis (interface-based) | Chat fan-out, rate limiting, presence, session cache. Provider-agnostic via interface. |
 | **Object Storage** | S3-compatible API (interface-based) | Provider-agnostic: S3, Cloudflare R2, GCS, MinIO, Backblaze B2. Swap easily. |
 | **Email** | SMTP (interface-based) | Provider-agnostic: Resend, SendGrid, SES, direct SMTP. |
-| **Video Pipeline (MVP)** | Cloud PaaS (TBD) | Gcore Video Cloud or Cloudflare Stream. Don't build a video infra company, build a platform. |
+| **Video Pipeline (MVP)** | Cloud PaaS (Gcore or Cloudflare) | All video processing via cloud API calls — no self-hosted FFmpeg, no local transcoding. See `pkg/videopipeline`. |
 | **Streaming CDN** | Gcore CDN (native to VM's cloud provider) | Near-zero latency between compute and edge. Swap to Cloudflare/Bunny/Fastly later via DNS. |
 | **Live Streaming Engine** | MediaMTX (RTMP/WHEP ingest) or LiveKit | Self-hosted on VM. Feeds into cloud CDN for edge delivery. |
 | **AI / Moderation** | Local Whisper + LLM (Ollama) + pgvector | Auto-captions, contextual moderation, embedding-based discovery. |
@@ -127,7 +127,7 @@ OTP (6-digit codes) for all user-facing verification flows. Links as backup for 
 
 ## Interfaces (Provider-Agnostic Contracts)
 
-Will define in Go code: `ObjectStore`, `Cache`, `EmailSender`, `TaskQueue`, `VideoTranscoder`, `AIEmbedder`, `ChatStream`, `PaymentProvider`, `CryptoWallet`.
+Will define in Go code: `ObjectStore`, `Cache`, `EmailSender`, `TaskQueue`, `Pipeline` (cloud video processing), `AIEmbedder`, `ChatStream`, `PaymentProvider`, `CryptoWallet`.
 
 ---
 
@@ -187,7 +187,7 @@ Will define in Go code: `ObjectStore`, `Cache`, `EmailSender`, `TaskQueue`, `Vid
 - [ ] Creator dashboard with analytics
 - [ ] Admin panel for moderation
 - [ ] Mobile push notifications
-- [ ] Self-hosted transcoding farm
+- [ ] Self-hosted cloud pipeline (Phase 3, only if PaaS costs exceed infra cost)
 - [ ] Edge caching configuration
 - [ ] Tenant/enterprise features
 

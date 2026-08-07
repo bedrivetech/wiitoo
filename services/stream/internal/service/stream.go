@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/fusion-platform/pkg/stream"
 	"github.com/fusion-platform/stream/internal/config"
@@ -74,36 +75,36 @@ func (s *StreamService) GetStream(ctx context.Context, id string) (*stream.Strea
 }
 
 func (s *StreamService) ListLiveStreams(ctx context.Context, category string, limit, offset int) ([]*stream.Stream, error) {
-	var rows interface{ Scan(...interface{}) error }
+	var rows pgx.Rows
+	var err error
+
 	if category != "" {
-		r, err := s.pool.Query(ctx,
+		rows, err = s.pool.Query(ctx,
 			`SELECT id, user_id, title, category, tags, rtmp_url, status, viewer_count, max_viewers, started_at, is_mature, created_at
 			 FROM streams WHERE status='live' AND category=$1 ORDER BY viewer_count DESC LIMIT $2 OFFSET $3`,
 			category, limit, offset)
-		if err != nil {
-			return nil, err
-		}
-		defer r.Close()
-		rows = r
 	} else {
-		r, err := s.pool.Query(ctx,
+		rows, err = s.pool.Query(ctx,
 			`SELECT id, user_id, title, category, tags, rtmp_url, status, viewer_count, max_viewers, started_at, is_mature, created_at
 			 FROM streams WHERE status='live' ORDER BY viewer_count DESC LIMIT $1 OFFSET $2`,
 			limit, offset)
-		if err != nil {
-			return nil, err
-		}
-		defer r.Close()
-		rows = r
 	}
-
-	var streams []*stream.Stream
-	// Abstract iteration since both paths return *pgx.Rows
-	for _, row := range rows {
-		_ = row
+	if err != nil {
+		return nil, err
 	}
+	defer rows.Close()
 
 	var results []*stream.Stream
+	for rows.Next() {
+		var st stream.Stream
+		var statusStr string
+		if err := rows.Scan(&st.ID, &st.UserID, &st.Title, &st.Category, &st.Tags, &st.RTMPURL,
+			&statusStr, &st.ViewerCount, &st.MaxViewers, &st.StartedAt, &st.IsMature, &st.CreatedAt); err != nil {
+			return nil, err
+		}
+		st.Status = stream.StreamStatus(statusStr)
+		results = append(results, &st)
+	}
 	return results, nil
 }
 

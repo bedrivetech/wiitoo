@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fusion-platform/pkg/queue"
 	"github.com/fusion-platform/pkg/storage"
-	"github.com/fusion-platform/pkg/transcode"
+	"github.com/fusion-platform/pkg/videopipeline"
 	"github.com/fusion-platform/video/internal/config"
 	"github.com/fusion-platform/video/internal/model"
 	"github.com/fusion-platform/video/internal/repository"
@@ -15,22 +14,21 @@ import (
 )
 
 type VideoService struct {
-	repo      *repository.VideoRepository
-	store     storage.ObjectStore
-	transcoder transcode.Transcoder
-	taskQueue *VideoTaskQueue
-	cfg       *svcconfig.Config
+	repo     *repository.VideoRepository
+	store    storage.ObjectStore
+	pipeline videopipeline.Pipeline
+	cfg      *svcconfig.Config
 }
 
-func NewVideoService(repo *repository.VideoRepository, store storage.ObjectStore, t transcoder.Transcoder, tq *VideoTaskQueue, cfg *svcconfig.Config) *VideoService {
-	return &VideoService{repo: repo, store: store, transcoder: t, taskQueue: tq, cfg: cfg}
+func NewVideoService(repo *repository.VideoRepository, store storage.ObjectStore, p videopipeline.Pipeline, cfg *svcconfig.Config) *VideoService {
+	return &VideoService{repo: repo, store: store, pipeline: p, cfg: cfg}
 }
 
 type UploadResponse struct {
-	UploadID    string `json:"uploadId"`
-	VideoID     string `json:"videoId"`
-	UploadURL   string `json:"uploadUrl"`
-	ExpiresIn   int    `json:"expiresIn"`
+	UploadID  string `json:"uploadId"`
+	VideoID   string `json:"videoId"`
+	UploadURL string `json:"uploadUrl"`
+	ExpiresIn int    `json:"expiresIn"`
 }
 
 func (s *VideoService) RequestUpload(ctx context.Context, filename, contentType string, size int64) (*UploadResponse, error) {
@@ -79,7 +77,7 @@ func (s *VideoService) CompleteUpload(ctx context.Context, uploadID, videoID str
 	return video, nil
 }
 
-func (s *VideoService) Transcode(ctx context.Context, videoID string, resolutions []string) (*transcode.HLSResponse, error) {
+func (s *VideoService) StartProcessing(ctx context.Context, videoID string, resolutions []string) (*videopipeline.ProcessResponse, error) {
 	video, err := s.repo.GetByID(ctx, videoID)
 	if err != nil {
 		return nil, err
@@ -89,16 +87,21 @@ func (s *VideoService) Transcode(ctx context.Context, videoID string, resolution
 		resolutions = []string{"720p", "480p", "360p"}
 	}
 
-	req := transcode.HLSRequest{
-		InputKey:    video.StorageKey,
-		Bucket:      s.cfg.StorageBucket,
-		OutputKey:   fmt.Sprintf("videos/%s/hls", videoID),
-		Resolutions: resolutions,
+	inputURL, err := s.store.PresignedURL(ctx, s.cfg.StorageBucket, video.StorageKey, 1*time.Hour, "GET")
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate source URL: %w", err)
 	}
 
-	resp, err := s.transcoder.TranscodeToHLS(ctx, req)
+	req := videopipeline.ProcessRequest{
+		InputURL:    inputURL,
+		OutputKey:   fmt.Sprintf("videos/%s/hls", videoID),
+		Resolutions: resolutions,
+		CallbackURL: fmt.Sprintf("%s/api/v1/video/%s/process-callback", s.cfg.PublicURL, videoID),
+	}
+
+	resp, err := s.pipeline.ProcessVideo(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("transcode failed: %w", err)
+		return nil, fmt.Errorf("cloud processing request failed: %w", err)
 	}
 
 	video.Status = "processing"
@@ -106,6 +109,22 @@ func (s *VideoService) Transcode(ctx context.Context, videoID string, resolution
 	s.repo.Update(ctx, video)
 
 	return resp, nil
+}
+
+func (s *VideoService) HandleProcessCallback(ctx context.Context, videoID, status, masterURL string) error {
+	video, err := s.repo.GetByID(ctx, videoID)
+	if err != nil {
+		return err
+	}
+
+	if status == "completed" {
+		video.Status = "ready"
+		video.HLSURL = masterURL
+	} else {
+		video.Status = "failed"
+	}
+
+	return s.repo.Update(ctx, video)
 }
 
 func (s *VideoService) GetVideo(ctx context.Context, id string) (*model.Video, error) {
@@ -116,54 +135,92 @@ func (s *VideoService) ListVideos(ctx context.Context, category string, limit, o
 	return s.repo.List(ctx, category, limit, offset)
 }
 
-func (s *VideoService) GenerateClip(ctx context.Context, videoID string, startTime, duration float64, title string) (*transcode.ClipResponse, error) {
+func (s *VideoService) GenerateClip(ctx context.Context, videoID string, startTime, duration float64, title string) (*videopipeline.ClipResponse, error) {
 	video, err := s.repo.GetByID(ctx, videoID)
 	if err != nil {
 		return nil, err
 	}
 
-	clipReq := transcode.ClipRequest{
-		StreamKey: video.StorageKey,
-		Bucket:    s.cfg.StorageBucket,
+	sourceURL, err := s.store.PresignedURL(ctx, s.cfg.StorageBucket, video.StorageKey, 1*time.Hour, "GET")
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate source URL: %w", err)
+	}
+
+	clipReq := videopipeline.ClipRequest{
+		SourceURL: sourceURL,
 		StartTime: startTime,
 		Duration:  duration,
 		Title:     title,
 	}
 
-	return s.transcoder.GenerateClip(ctx, clipReq)
+	return s.pipeline.GenerateClip(ctx, clipReq)
 }
 
-func (s *VideoService) GenerateThumbnail(ctx context.Context, videoID string) (*transcode.ThumbnailResponse, error) {
+func (s *VideoService) GenerateThumbnail(ctx context.Context, videoID string) (*videopipeline.ThumbnailResponse, error) {
 	video, err := s.repo.GetByID(ctx, videoID)
 	if err != nil {
 		return nil, err
 	}
 
-	thumbReq := transcode.ThumbnailRequest{
-		InputKey:  video.StorageKey,
-		Bucket:    s.cfg.StorageBucket,
+	sourceURL, err := s.store.PresignedURL(ctx, s.cfg.StorageBucket, video.StorageKey, 1*time.Hour, "GET")
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate source URL: %w", err)
+	}
+
+	thumbReq := videopipeline.ThumbnailRequest{
+		SourceURL: sourceURL,
 		OutputKey: fmt.Sprintf("videos/%s/thumb.jpg", videoID),
 		Timestamp: 5,
 		Width:     1280,
 		Height:    720,
 	}
 
-	return s.transcoder.GenerateThumbnail(ctx, thumbReq)
+	return s.pipeline.GenerateThumbnail(ctx, thumbReq)
 }
 
-func (s *VideoService) ListPresets() map[string]transcode.Preset {
-	return transcode.Presets
+// CloudPipeline wraps a cloud video processing provider.
+// Uses the interface from pkg/videopipeline.
+type CloudPipeline struct {
+	provider string
+	apiKey   string
 }
 
-// VideoTaskQueue wraps Asynq for video-specific tasks.
-type VideoTaskQueue struct {
-	queue queue.TaskQueue
+func NewCloudPipeline(provider, apiKey string) *CloudPipeline {
+	return &CloudPipeline{provider: provider, apiKey: apiKey}
 }
 
-func NewVideoTaskQueue(redisURL string) *VideoTaskQueue {
-	return &VideoTaskQueue{}
+func (p *CloudPipeline) ProcessVideo(ctx context.Context, req videopipeline.ProcessRequest) (*videopipeline.ProcessResponse, error) {
+	// TODO: Implement API call to Gcore Video Cloud / Cloudflare Stream / Mux
+	// This will make an HTTP request to the provider's API with the file URL.
+	// The cloud provider pulls the file from S3, transcodes, and serves HLS.
+	return &videopipeline.ProcessResponse{
+		JobID:  uuid.New().String(),
+		Status: "queued",
+	}, nil
 }
 
-func (q *VideoTaskQueue) EnqueueTranscode(ctx context.Context, videoID string, resolutions []string) error {
+func (p *CloudPipeline) GetJobStatus(ctx context.Context, jobID string) (videopipeline.JobStatus, error) {
+	// TODO: Query cloud provider's job status API
+	return videopipeline.JobStatus{JobID: jobID, Status: "processing"}, nil
+}
+
+func (p *CloudPipeline) GenerateClip(ctx context.Context, req videopipeline.ClipRequest) (*videopipeline.ClipResponse, error) {
+	// TODO: Implement cloud provider clip generation API call
+	return &videopipeline.ClipResponse{
+		JobID:  uuid.New().String(),
+		Status: "queued",
+	}, nil
+}
+
+func (p *CloudPipeline) GenerateThumbnail(ctx context.Context, req videopipeline.ThumbnailRequest) (*videopipeline.ThumbnailResponse, error) {
+	// TODO: Implement cloud provider thumbnail API call
+	return &videopipeline.ThumbnailResponse{
+		JobID:  uuid.New().String(),
+		Status: "queued",
+	}, nil
+}
+
+func (p *CloudPipeline) CancelJob(ctx context.Context, jobID string) error {
+	// TODO: Implement cloud provider job cancellation
 	return nil
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/fusion-platform/pkg/config"
 	"github.com/fusion-platform/pkg/database"
 	"github.com/fusion-platform/pkg/storage"
-	"github.com/fusion-platform/pkg/queue"
 	"github.com/fusion-platform/video/internal/config"
 	"github.com/fusion-platform/video/internal/handler"
 	"github.com/fusion-platform/video/internal/repository"
@@ -44,10 +43,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	taskQueue := service.NewVideoTaskQueue(cfg.RedisURL)
-	transcoder := service.NewCloudTranscoder(cfg.TranscodeProvider, cfg.TranscodeAPIKey)
+	// Cloud pipeline — wraps calls to Gcore Video Cloud / Cloudflare Stream / Mux
+	// No self-hosted transcoding. All video processing happens via external API.
+	pipeline := service.NewCloudPipeline(cfg.TranscodeProvider, cfg.TranscodeAPIKey)
 	vidRepo := repository.NewVideoRepository(pgPool)
-	vidService := service.NewVideoService(vidRepo, objStore, transcoder, taskQueue, cfg)
+	vidService := service.NewVideoService(vidRepo, objStore, pipeline, cfg)
 
 	h := handler.NewVideoHandler(vidService)
 
@@ -57,17 +57,17 @@ func main() {
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Heartbeat("/healthz"))
-	r.Use(cors.Handler(cors.Options{AllowedOrigins: []string{"*"}, AllowedMethods: []string{"GET","POST","PATCH","PUT","DELETE","OPTIONS"}, AllowedHeaders: []string{"Accept","Authorization","Content-Type"}}))
+	r.Use(cors.Handler(cors.Options{AllowedOrigins: []string{"*"}, AllowedMethods: []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"}, AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"}}))
 
 	r.Route("/api/v1/video", func(r chi.Router) {
 		r.Post("/upload", h.RequestUpload)
 		r.Post("/upload/complete", h.CompleteUpload)
-		r.Post("/transcode", h.Transcode)
+		r.Post("/process", h.StartProcessing)
+		r.Post("/{id}/process-callback", h.ProcessCallback)
 		r.Get("/{id}", h.GetVideo)
 		r.Get("/", h.ListVideos)
 		r.Post("/{id}/clip", h.GenerateClip)
 		r.Post("/{id}/thumbnail", h.GenerateThumbnail)
-		r.Get("/presets", h.ListPresets)
 	})
 
 	srv := &http.Server{

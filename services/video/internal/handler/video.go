@@ -53,7 +53,7 @@ func (h *VideoHandler) CompleteUpload(w http.ResponseWriter, r *http.Request) {
 	apierror.WriteData(w, http.StatusOK, video, nil)
 }
 
-func (h *VideoHandler) Transcode(w http.ResponseWriter, r *http.Request) {
+func (h *VideoHandler) StartProcessing(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		VideoID     string   `json:"videoId"`
 		Resolutions []string `json:"resolutions"`
@@ -62,12 +62,29 @@ func (h *VideoHandler) Transcode(w http.ResponseWriter, r *http.Request) {
 		apierror.WriteJSON(w, http.StatusBadRequest, apierror.APIResponse{Success: false, Error: apierror.ErrInvalidRequestBody})
 		return
 	}
-	job, err := h.svc.Transcode(r.Context(), req.VideoID, req.Resolutions)
+	job, err := h.svc.StartProcessing(r.Context(), req.VideoID, req.Resolutions)
 	if err != nil {
-		apierror.WriteInternalError(w, "transcode failed", err)
+		apierror.WriteInternalError(w, "processing request failed", err)
 		return
 	}
 	apierror.WriteData(w, http.StatusAccepted, job, nil)
+}
+
+func (h *VideoHandler) ProcessCallback(w http.ResponseWriter, r *http.Request) {
+	var cb struct {
+		Status    string `json:"status"`
+		MasterURL string `json:"masterUrl"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&cb); err != nil {
+		apierror.WriteJSON(w, http.StatusBadRequest, apierror.APIResponse{Success: false, Error: apierror.ErrInvalidRequestBody})
+		return
+	}
+	videoID := chi.URLParam(r, "id")
+	if err := h.svc.HandleProcessCallback(r.Context(), videoID, cb.Status, cb.MasterURL); err != nil {
+		apierror.WriteInternalError(w, "process callback failed", err)
+		return
+	}
+	apierror.WriteData(w, http.StatusOK, map[string]string{"status": "ok"}, nil)
 }
 
 func (h *VideoHandler) GetVideo(w http.ResponseWriter, r *http.Request) {
@@ -116,8 +133,4 @@ func (h *VideoHandler) GenerateThumbnail(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	apierror.WriteData(w, http.StatusAccepted, thumb, nil)
-}
-
-func (h *VideoHandler) ListPresets(w http.ResponseWriter, r *http.Request) {
-	apierror.WriteData(w, http.StatusOK, h.svc.ListPresets(), nil)
 }
