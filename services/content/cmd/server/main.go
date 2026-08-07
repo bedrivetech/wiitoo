@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fusion-platform/pkg/config"
 	"github.com/fusion-platform/pkg/database"
+	"github.com/fusion-platform/content/internal/config"
 	"github.com/fusion-platform/content/internal/handler"
 	"github.com/fusion-platform/content/internal/service"
 	"github.com/go-chi/chi/v5"

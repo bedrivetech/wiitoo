@@ -162,10 +162,7 @@ func (s *S3Store) List(ctx context.Context, bucket, prefix string, opts ...ListO
 }
 
 func (s *S3Store) PresignedURL(ctx context.Context, bucket, key string, ttl time.Duration, method string) (string, error) {
-	// Use AWS SDK presign client
 	presignClient := s3.NewPresignClient(s.client)
-
-	var presignReq func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.PresignOptions)) (*s3.PresignedHTTPRequest, error)
 
 	switch method {
 	case "PUT", "POST":
@@ -193,9 +190,6 @@ func (s *S3Store) PresignedURL(ctx context.Context, bucket, key string, ttl time
 		}
 		return req.URL, nil
 	}
-
-	_ = presignReq
-	return "", fmt.Errorf("unsupported method: %s", method)
 }
 
 func (s *S3Store) Copy(ctx context.Context, srcBucket, srcKey, dstBucket, dstKey string) error {

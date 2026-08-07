@@ -1,6 +1,10 @@
 package apierror
 
-import "net/http"
+import (
+	"encoding/json"
+	"log/slog"
+	"net/http"
+)
 
 // Standard error codes for the platform.
 const (

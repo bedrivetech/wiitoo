@@ -21,7 +21,7 @@ func NewPool(ctx context.Context, cfg config.DatabaseConfig) (*pgxpool.Pool, err
 	poolCfg.MinConns = int32(cfg.MinConns)
 	poolCfg.MaxConnLifetime = cfg.MaxConnLifetime
 	poolCfg.MaxConnIdleTime = cfg.MaxConnIdleTime
-	poolCfg.HealthCheckInterval = cfg.HealthCheckInterval
+
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
@@ -48,7 +48,7 @@ func NewPoolFromURL(ctx context.Context, databaseURL string, maxConns int) (*pgx
 		MinConns:            5,
 		MaxConnLifetime:     30 * time.Minute,
 		MaxConnIdleTime:     5 * time.Minute,
-		HealthCheckInterval: 30 * time.Second,
+
 	}
 	return NewPool(ctx, cfg)
 }

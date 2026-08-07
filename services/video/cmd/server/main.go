@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fusion-platform/pkg/config"
 	"github.com/fusion-platform/pkg/database"
 	"github.com/fusion-platform/pkg/storage"
 	"github.com/fusion-platform/video/internal/config"
@@ -43,9 +42,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Cloud pipeline — wraps calls to Gcore Video Cloud / Cloudflare Stream / Mux
-	// No self-hosted transcoding. All video processing happens via external API.
-	pipeline := service.NewCloudPipeline(cfg.TranscodeProvider, cfg.TranscodeAPIKey)
+	// Cloud video pipeline — provider-selected via VIDEO_PROVIDER env var.
+	// Supported: "cloudflare" (default), "gcore".
+	// No self-hosted transcoding. All video processing happens via cloud PaaS API.
+	pipeline := service.NewPipelineFromConfig(cfg.VideoProvider, cfg)
 	vidRepo := repository.NewVideoRepository(pgPool)
 	vidService := service.NewVideoService(vidRepo, objStore, pipeline, cfg)
 

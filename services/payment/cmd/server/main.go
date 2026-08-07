@@ -9,11 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fusion-platform/pkg/config"
 	"github.com/fusion-platform/pkg/database"
+	"github.com/fusion-platform/payment/internal/config"
 	"github.com/fusion-platform/payment/internal/handler"
 	"github.com/fusion-platform/payment/internal/service"
-	"github.com/fusion-platform/payment/internal/model"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"

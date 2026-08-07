@@ -178,49 +178,24 @@ func (s *VideoService) GenerateThumbnail(ctx context.Context, videoID string) (*
 	return s.pipeline.GenerateThumbnail(ctx, thumbReq)
 }
 
-// CloudPipeline wraps a cloud video processing provider.
-// Uses the interface from pkg/videopipeline.
-type CloudPipeline struct {
-	provider string
-	apiKey   string
-}
-
-func NewCloudPipeline(provider, apiKey string) *CloudPipeline {
-	return &CloudPipeline{provider: provider, apiKey: apiKey}
-}
-
-func (p *CloudPipeline) ProcessVideo(ctx context.Context, req videopipeline.ProcessRequest) (*videopipeline.ProcessResponse, error) {
-	// TODO: Implement API call to Gcore Video Cloud / Cloudflare Stream / Mux
-	// This will make an HTTP request to the provider's API with the file URL.
-	// The cloud provider pulls the file from S3, transcodes, and serves HLS.
-	return &videopipeline.ProcessResponse{
-		JobID:  uuid.New().String(),
-		Status: "queued",
-	}, nil
-}
-
-func (p *CloudPipeline) GetJobStatus(ctx context.Context, jobID string) (videopipeline.JobStatus, error) {
-	// TODO: Query cloud provider's job status API
-	return videopipeline.JobStatus{JobID: jobID, Status: "processing"}, nil
-}
-
-func (p *CloudPipeline) GenerateClip(ctx context.Context, req videopipeline.ClipRequest) (*videopipeline.ClipResponse, error) {
-	// TODO: Implement cloud provider clip generation API call
-	return &videopipeline.ClipResponse{
-		JobID:  uuid.New().String(),
-		Status: "queued",
-	}, nil
-}
-
-func (p *CloudPipeline) GenerateThumbnail(ctx context.Context, req videopipeline.ThumbnailRequest) (*videopipeline.ThumbnailResponse, error) {
-	// TODO: Implement cloud provider thumbnail API call
-	return &videopipeline.ThumbnailResponse{
-		JobID:  uuid.New().String(),
-		Status: "queued",
-	}, nil
-}
-
-func (p *CloudPipeline) CancelJob(ctx context.Context, jobID string) error {
-	// TODO: Implement cloud provider job cancellation
-	return nil
+// NewPipelineFromConfig creates a cloud video pipeline provider based on config.
+// Supported providers: "gcore", "cloudflare" (default).
+func NewPipelineFromConfig(provider string, cfg *svcconfig.Config) videopipeline.Pipeline {
+	switch provider {
+	case "gcore":
+		return videopipeline.NewGcorePipeline(videopipeline.GcoreConfig{
+			APIKey: cfg.GcoreAPIKey,
+		})
+	case "cloudflare":
+		return videopipeline.NewCloudflarePipeline(videopipeline.CloudflareConfig{
+			AccountID: cfg.CloudflareAccountID,
+			APIToken:  cfg.CloudflareAPIToken,
+		})
+	default:
+		// Default to cloudflare
+		return videopipeline.NewCloudflarePipeline(videopipeline.CloudflareConfig{
+			AccountID: cfg.CloudflareAccountID,
+			APIToken:  cfg.CloudflareAPIToken,
+		})
+	}
 }
