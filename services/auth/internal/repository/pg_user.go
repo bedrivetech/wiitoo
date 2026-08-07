@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fusion-platform/auth/internal/model"
@@ -240,6 +242,136 @@ func (r *UserRepository) RevokeAllUserRefreshTokens(ctx context.Context, userID 
 	_, err := r.pool.Exec(ctx,
 		`UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL`,
 		userID,
+	)
+	return err
+}
+
+// --- Admin methods ---
+
+// AdminListUsers returns a paginated, filtered list of users.
+func (r *UserRepository) AdminListUsers(ctx context.Context, search string, role, status string, limit, offset int) ([]*model.User, int, error) {
+	where := []string{"1=1"}
+	args := []any{}
+	argIdx := 1
+
+	if search != "" {
+		where = append(where, "(email ILIKE $"+strconv.Itoa(argIdx)+" OR username ILIKE $"+strconv.Itoa(argIdx)+" OR display_name ILIKE $"+strconv.Itoa(argIdx)+")")
+		args = append(args, "%"+search+"%")
+		argIdx++
+	}
+	if role != "" {
+		where = append(where, "role = $"+strconv.Itoa(argIdx))
+		args = append(args, role)
+		argIdx++
+	}
+	if status != "" {
+		where = append(where, "status = $"+strconv.Itoa(argIdx))
+		args = append(args, status)
+		argIdx++
+	}
+
+	whereClause := strings.Join(where, " AND ")
+
+	// Count total
+	var total int
+	countQuery := "SELECT COUNT(*) FROM users WHERE " + whereClause
+	if err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	// Fetch page
+	query := `SELECT id, email, password, username, display_name, avatar_url, role, status,
+	          email_verified_at, created_at, updated_at
+	          FROM users WHERE ` + whereClause + ` ORDER BY created_at DESC LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var users []*model.User
+	for rows.Next() {
+		u := &model.User{}
+		if err := rows.Scan(&u.ID, &u.Email, &u.Password, &u.Username, &u.DisplayName, &u.AvatarURL, &u.Role, &u.Status, &u.EmailVerifiedAt, &u.CreatedAt, &u.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		users = append(users, u)
+	}
+	return users, total, nil
+}
+
+// AdminGetUserWithOAuth returns a user with their OAuth accounts.
+func (r *UserRepository) AdminGetUserWithOAuth(ctx context.Context, id string) (*model.User, []*model.OAuthAccount, error) {
+	user, err := r.FindByID(ctx, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	if user == nil {
+		return nil, nil, nil
+	}
+
+	rows, err := r.pool.Query(ctx,
+		`SELECT id, user_id, provider, provider_user_id, access_token, refresh_token, expires_at, created_at
+		 FROM oauth_accounts WHERE user_id = $1`, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	var accounts []*model.OAuthAccount
+	for rows.Next() {
+		a := &model.OAuthAccount{}
+		rows.Scan(&a.ID, &a.UserID, &a.Provider, &a.ProviderUserID, &a.AccessToken, &a.RefreshToken, &a.ExpiresAt, &a.CreatedAt)
+		accounts = append(accounts, a)
+	}
+	return user, accounts, nil
+}
+
+// AdminUpdateUser updates a user's role, status, and/or display_name by admin.
+func (r *UserRepository) AdminUpdateUser(ctx context.Context, id string, role *string, status *string, displayName *string) (*model.User, error) {
+	sets := []string{"updated_at = NOW()"}
+	args := []any{id}
+	argIdx := 2
+
+	if role != nil {
+		sets = append(sets, "role = $"+strconv.Itoa(argIdx))
+		args = append(args, *role)
+		argIdx++
+	}
+	if status != nil {
+		sets = append(sets, "status = $"+strconv.Itoa(argIdx))
+		args = append(args, *status)
+		argIdx++
+	}
+	if displayName != nil {
+		sets = append(sets, "display_name = $"+strconv.Itoa(argIdx))
+		args = append(args, *displayName)
+		argIdx++
+	}
+
+	setClause := strings.Join(sets, ", ")
+	query := `UPDATE users SET ` + setClause + ` WHERE id = $1
+	          RETURNING id, email, password, username, display_name, avatar_url, role, status,
+	                    email_verified_at, created_at, updated_at`
+
+	user := &model.User{}
+	err := r.pool.QueryRow(ctx, query, args...).Scan(
+		&user.ID, &user.Email, &user.Password, &user.Username, &user.DisplayName, &user.AvatarURL, &user.Role, &user.Status,
+		&user.EmailVerifiedAt, &user.CreatedAt, &user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+// AdminSoftDelete marks a user as deleted.
+func (r *UserRepository) AdminSoftDelete(ctx context.Context, id string) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE users SET status = 'deleted', updated_at = NOW() WHERE id = $1 AND status != 'deleted'`,
+		id,
 	)
 	return err
 }

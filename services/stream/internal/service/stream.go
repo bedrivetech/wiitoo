@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -208,4 +210,77 @@ func generateStreamKey() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
+}
+
+// --- Admin methods ---
+
+// AdminListStreams returns a paginated list of all streams filtered by search/status/userID.
+func (s *StreamService) AdminListStreams(ctx context.Context, search, statusFilter, userID string, limit, offset int) ([]*stream.Stream, int, error) {
+	where := []string{"1=1"}
+	args := []any{}
+	argIdx := 1
+
+	if search != "" {
+		where = append(where, "(title ILIKE $"+strconv.Itoa(argIdx)+" OR category ILIKE $"+strconv.Itoa(argIdx)+")")
+		args = append(args, "%"+search+"%")
+		argIdx++
+	}
+	if statusFilter != "" {
+		where = append(where, "status = $"+strconv.Itoa(argIdx))
+		args = append(args, statusFilter)
+		argIdx++
+	}
+	if userID != "" {
+		where = append(where, "user_id = $"+strconv.Itoa(argIdx))
+		args = append(args, userID)
+		argIdx++
+	}
+
+	whereClause := strings.Join(where, " AND ")
+
+	var total int
+	if err := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM streams WHERE "+whereClause, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `SELECT id, user_id, title, category, tags, rtmp_url, status, viewer_count, max_viewers, started_at, ended_at, duration, vod_key, is_mature, created_at, updated_at
+	          FROM streams WHERE ` + whereClause + ` ORDER BY created_at DESC LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
+	args = append(args, limit, offset)
+
+	rows, err := s.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var results []*stream.Stream
+	for rows.Next() {
+		var st stream.Stream
+		var statusStr string
+		if err := rows.Scan(&st.ID, &st.UserID, &st.Title, &st.Category, &st.Tags, &st.RTMPURL,
+			&statusStr, &st.ViewerCount, &st.MaxViewers, &st.StartedAt, &st.EndedAt,
+			&st.Duration, &st.VODKey, &st.IsMature, &st.CreatedAt, &st.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		st.Status = stream.StreamStatus(statusStr)
+		results = append(results, &st)
+	}
+	return results, total, nil
+}
+
+// AdminKillStream forcefully ends a stream.
+func (s *StreamService) AdminKillStream(ctx context.Context, id string) error {
+	now := time.Now()
+	_, err := s.pool.Exec(ctx,
+		`UPDATE streams SET status='ended', ended_at=$1, duration=COALESCE(EXTRACT(EPOCH FROM $1 - started_at)::int, 0), updated_at=$1 WHERE id=$2 AND status NOT IN ('ended', 'error')`,
+		now, id)
+	return err
+}
+
+// AdminBanUserFromStreaming records a streaming ban for a user.
+func (s *StreamService) AdminBanUserFromStreaming(ctx context.Context, userID, reason string) error {
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO stream_bans (user_id, reason, created_at) VALUES ($1, $2, NOW()) ON CONFLICT (user_id) DO UPDATE SET reason = $2, created_at = NOW()`,
+		userID, reason)
+	return err
 }

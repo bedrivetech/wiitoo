@@ -13,6 +13,7 @@ import (
 	"github.com/fusion-platform/auth/internal/config"
 	"github.com/fusion-platform/auth/internal/handler"
 	"github.com/fusion-platform/auth/internal/middleware"
+	"github.com/fusion-platform/auth/internal/model"
 	"github.com/fusion-platform/auth/internal/repository"
 	"github.com/fusion-platform/auth/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -83,6 +84,9 @@ func main() {
 	tokenHandler := handler.NewTokenHandler(authService)
 	profileHandler := handler.NewProfileHandler(authService, otpService, userRepo, hasher, emailSender, emailBuilder)
 
+	// Admin handler
+	adminHandler := handler.NewAdminHandler(userRepo)
+
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 	rateLimiter := middleware.NewRateLimiter(rdb, cfg.RedisPrefix, 100, 200, time.Minute, time.Minute)
@@ -131,6 +135,17 @@ func main() {
 			r.Post("/email/change", profileHandler.EmailChange)
 			r.Post("/email/change/confirm", profileHandler.EmailChangeConfirm)
 		})
+	})
+
+	// Admin routes (protected by auth + admin role)
+	r.Route("/api/v1/admin", func(r chi.Router) {
+		r.Use(authMiddleware.Authenticate)
+		r.Use(authMiddleware.RequireRole(model.RoleAdmin))
+
+		r.Get("/users", adminHandler.ListUsers)
+		r.Get("/users/{id}", adminHandler.GetUser)
+		r.Patch("/users/{id}", adminHandler.UpdateUser)
+		r.Delete("/users/{id}", adminHandler.DeleteUser)
 	})
 
 	// Create server

@@ -9,10 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fusion-platform/pkg/database"
 	"github.com/fusion-platform/content/internal/config"
 	"github.com/fusion-platform/content/internal/handler"
+	"github.com/fusion-platform/content/internal/repository"
 	"github.com/fusion-platform/content/internal/service"
+	"github.com/fusion-platform/pkg/database"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -31,6 +32,8 @@ func main() {
 
 	contentSvc := service.NewContentService(pgPool, cfg)
 	h := handler.NewContentHandler(contentSvc)
+	contentRepo := repository.NewContentRepository(pgPool)
+	adminH := handler.NewAdminHandler(contentRepo)
 
 	r := chi.NewRouter()
 	r.Use(chimiddleware.RequestID)
@@ -39,6 +42,20 @@ func main() {
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Heartbeat("/healthz"))
 	r.Use(cors.Handler(cors.Options{AllowedOrigins: []string{"*"}, AllowedMethods: []string{"GET","POST","PATCH","DELETE","OPTIONS"}, AllowedHeaders: []string{"Accept","Authorization","Content-Type"}}))
+
+	// Admin routes — protected by API gateway/mesh. Inline middleware checks X-User-Role header.
+	r.Route("/api/v1/admin", func(r chi.Router) {
+		r.Use(adminRoleMiddleware)
+		r.Get("/categories", adminH.ListCategories)
+		r.Post("/categories", adminH.CreateCategory)
+		r.Get("/categories/{id}", adminH.GetCategory)
+		r.Patch("/categories/{id}", adminH.UpdateCategory)
+		r.Delete("/categories/{id}", adminH.DeleteCategory)
+		r.Get("/reports", adminH.ListReports)
+		r.Patch("/reports/{id}", adminH.ResolveReport)
+		r.Get("/clips", adminH.ListClips)
+		r.Delete("/clips/{id}", adminH.DeleteClip)
+	})
 
 	r.Route("/api/v1/content", func(r chi.Router) {
 		r.Post("/categories", h.CreateCategory)
@@ -74,4 +91,19 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	srv.Shutdown(ctx)
+}
+
+// adminRoleMiddleware checks that the caller has an admin role.
+// In production, the API gateway or service mesh injects this header after JWT validation.
+func adminRoleMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		role := r.Header.Get("X-User-Role")
+		if role != "admin" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(`{"success":false,"error":{"code":"FORBIDDEN","message":"Access denied"}}`))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

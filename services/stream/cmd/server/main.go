@@ -31,6 +31,7 @@ func main() {
 
 	streamSvc := service.NewStreamService(cfg, pgPool)
 	h := handler.NewStreamHandler(streamSvc)
+	adminH := handler.NewAdminHandler(streamSvc)
 
 	r := chi.NewRouter()
 	r.Use(chimiddleware.RequestID)
@@ -39,6 +40,15 @@ func main() {
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Heartbeat("/healthz"))
 	r.Use(cors.Handler(cors.Options{AllowedOrigins: []string{"*"}, AllowedMethods: []string{"GET","POST","PATCH","DELETE","OPTIONS"}, AllowedHeaders: []string{"Accept","Authorization","Content-Type"}}))
+
+	// Admin routes — protected by API gateway/mesh. Inline middleware checks X-User-Role header.
+	r.Route("/api/v1/admin", func(r chi.Router) {
+		r.Use(adminRoleMiddleware)
+		r.Get("/streams", adminH.ListStreams)
+		r.Get("/streams/{id}", adminH.GetStream)
+		r.Post("/streams/{id}/kill", adminH.KillStream)
+		r.Post("/users/{userId}/stream-ban", adminH.BanUserFromStreaming)
+	})
 
 	r.Route("/api/v1/stream", func(r chi.Router) {
 		r.Post("/start", h.StartStream)
@@ -77,4 +87,19 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	srv.Shutdown(ctx)
+}
+
+// adminRoleMiddleware checks that the caller has an admin role.
+// In production, the API gateway or service mesh injects this header after JWT validation.
+func adminRoleMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		role := r.Header.Get("X-User-Role")
+		if role != "admin" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(`{"success":false,"error":{"code":"FORBIDDEN","message":"Access denied"}}`))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

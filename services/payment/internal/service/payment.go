@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -286,4 +288,177 @@ func (s *PaymentService) getSubscription(ctx context.Context, id string) (*model
 		return nil, fmt.Errorf("subscription not found: %w", err)
 	}
 	return sub, nil
+}
+
+// --- Admin methods ---
+
+// AdminListTransactions returns all transactions with optional filters.
+func (s *PaymentService) AdminListTransactions(ctx context.Context, userID, status, method string, limit, offset int) ([]model.Transaction, int, error) {
+	where := []string{"1=1"}
+	args := []any{}
+	argIdx := 1
+
+	if userID != "" {
+		where = append(where, "user_id = $"+strconv.Itoa(argIdx))
+		args = append(args, userID)
+		argIdx++
+	}
+	if status != "" {
+		where = append(where, "status = $"+strconv.Itoa(argIdx))
+		args = append(args, status)
+		argIdx++
+	}
+	if method != "" {
+		where = append(where, "provider = $"+strconv.Itoa(argIdx))
+		args = append(args, method)
+		argIdx++
+	}
+
+	whereClause := strings.Join(where, " AND ")
+
+	var total int
+	if err := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM transactions WHERE "+whereClause, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `SELECT id, user_id, type, provider, provider_txn_id, amount, currency, fee, net_amount, status, description, created_at
+	          FROM transactions WHERE ` + whereClause + ` ORDER BY created_at DESC LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
+	args = append(args, limit, offset)
+
+	rows, err := s.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var txns []model.Transaction
+	for rows.Next() {
+		var t model.Transaction
+		rows.Scan(&t.ID, &t.UserID, &t.Type, &t.Provider, &t.ProviderTxnID, &t.Amount, &t.Currency, &t.Fee, &t.NetAmount, &t.Status, &t.Description, &t.CreatedAt)
+		txns = append(txns, t)
+	}
+	return txns, total, nil
+}
+
+// AdminGetTransaction returns a single transaction by ID.
+func (s *PaymentService) AdminGetTransaction(ctx context.Context, id string) (*model.Transaction, error) {
+	t := &model.Transaction{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, user_id, type, provider, provider_txn_id, amount, currency, fee, net_amount, status, description, created_at
+		 FROM transactions WHERE id = $1`, id).Scan(
+		&t.ID, &t.UserID, &t.Type, &t.Provider, &t.ProviderTxnID, &t.Amount, &t.Currency, &t.Fee, &t.NetAmount, &t.Status, &t.Description, &t.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
+// AdminListPayouts returns all payout history.
+func (s *PaymentService) AdminListPayouts(ctx context.Context, limit, offset int) ([]model.Payout, int, error) {
+	var total int
+	if err := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM payouts").Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, creator_id, amount, fee, net_amount, method, status, provider_ref, period_start, period_end, processed_at, created_at
+		 FROM payouts ORDER BY created_at DESC LIMIT $1 OFFSET $2`, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var payouts []model.Payout
+	for rows.Next() {
+		var p model.Payout
+		rows.Scan(&p.ID, &p.CreatorID, &p.Amount, &p.Fee, &p.NetAmount, &p.Method, &p.Status, &p.ProviderRef, &p.PeriodStart, &p.PeriodEnd, &p.ProcessedAt, &p.CreatedAt)
+		payouts = append(payouts, p)
+	}
+	return payouts, total, nil
+}
+
+// AdminTriggerPayout creates a manual payout for a creator.
+func (s *PaymentService) AdminTriggerPayout(ctx context.Context, creatorID string, amount float64) (*model.Payout, error) {
+	existingBalance, _ := s.GetBalance(ctx, creatorID)
+
+	// Deduct from ledger if there's balance
+	if existingBalance >= amount {
+		_, err := s.pool.Exec(ctx,
+			`UPDATE creator_ledger SET balance = balance - $2, pending_payout = pending_payout + $2, updated_at = NOW() WHERE creator_id = $1`,
+			creatorID, amount)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	payout := &model.Payout{
+		ID:          uuid.New().String(),
+		CreatorID:   creatorID,
+		Amount:      amount,
+		Fee:         0,
+		NetAmount:   amount,
+		Method:      "manual",
+		Status:      "pending_manual",
+		PeriodStart: time.Now().Add(-30 * 24 * time.Hour),
+		PeriodEnd:   time.Now(),
+		CreatedAt:   time.Now(),
+	}
+
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO payouts (id, creator_id, amount, fee, net_amount, method, status, period_start, period_end, created_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		payout.ID, payout.CreatorID, payout.Amount, payout.Fee, payout.NetAmount,
+		payout.Method, payout.Status, payout.PeriodStart, payout.PeriodEnd, payout.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return payout, nil
+}
+
+// AdminListSubscriptions returns all subscriptions with optional status filter.
+func (s *PaymentService) AdminListSubscriptions(ctx context.Context, status string, limit, offset int) ([]model.Subscription, int, error) {
+	where := []string{"1=1"}
+	args := []any{}
+	argIdx := 1
+
+	if status != "" {
+		where = append(where, "status = $"+strconv.Itoa(argIdx))
+		args = append(args, status)
+		argIdx++
+	}
+
+	whereClause := strings.Join(where, " AND ")
+
+	var total int
+	if err := s.pool.QueryRow(ctx, "SELECT COUNT(*) FROM subscriptions WHERE "+whereClause, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `SELECT id, user_id, plan_id, provider, provider_sub_id, status, current_period_start, current_period_end, canceled_at, created_at
+	          FROM subscriptions WHERE ` + whereClause + ` ORDER BY created_at DESC LIMIT $` + strconv.Itoa(argIdx) + ` OFFSET $` + strconv.Itoa(argIdx+1)
+	args = append(args, limit, offset)
+
+	rows, err := s.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var subs []model.Subscription
+	for rows.Next() {
+		var sub model.Subscription
+		rows.Scan(&sub.ID, &sub.UserID, &sub.PlanID, &sub.Provider, &sub.ProviderSubID, &sub.Status,
+			&sub.CurrentPeriodStart, &sub.CurrentPeriodEnd, &sub.CanceledAt, &sub.CreatedAt)
+		subs = append(subs, sub)
+	}
+	return subs, total, nil
+}
+
+// AdminIssueRefund marks a transaction as refunded.
+func (s *PaymentService) AdminIssueRefund(ctx context.Context, transactionID, reason string) error {
+	_, err := s.pool.Exec(ctx,
+		`UPDATE transactions SET status = 'refunded', description = CASE WHEN $2 != '' THEN $2 ELSE description END WHERE id = $1 AND status = 'completed'`,
+		transactionID, reason)
+	return err
 }

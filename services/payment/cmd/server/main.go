@@ -31,6 +31,7 @@ func main() {
 
 	paySvc := service.NewPaymentService(cfg, pgPool)
 	h := handler.NewPaymentHandler(paySvc)
+	adminH := handler.NewAdminHandler(paySvc)
 
 	r := chi.NewRouter()
 	r.Use(chimiddleware.RequestID)
@@ -39,6 +40,18 @@ func main() {
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Heartbeat("/healthz"))
 	r.Use(cors.Handler(cors.Options{AllowedOrigins: []string{"*"}, AllowedMethods: []string{"GET","POST","PATCH","DELETE","OPTIONS"}, AllowedHeaders: []string{"Accept","Authorization","Content-Type","X-Webhook-Signature"}}))
+
+	// Admin routes — protected by API gateway/mesh. Inline middleware checks X-User-Role header.
+	r.Route("/api/v1/admin", func(r chi.Router) {
+		r.Use(adminRoleMiddleware)
+		r.Get("/transactions", adminH.ListTransactions)
+		r.Get("/transactions/{id}", adminH.GetTransaction)
+		r.Get("/payouts", adminH.ListPayouts)
+		r.Post("/payouts", adminH.TriggerPayout)
+		r.Get("/subscriptions", adminH.ListSubscriptions)
+		r.Post("/subscriptions/{id}/cancel", adminH.CancelSubscription)
+		r.Post("/refund", adminH.IssueRefund)
+	})
 
 	r.Route("/api/v1/payments", func(r chi.Router) {
 		r.Post("/checkout", h.CreateCheckout)
@@ -79,4 +92,19 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	srv.Shutdown(ctx)
+}
+
+// adminRoleMiddleware checks that the caller has an admin role.
+// In production, the API gateway or service mesh injects this header after JWT validation.
+func adminRoleMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		role := r.Header.Get("X-User-Role")
+		if role != "admin" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(`{"success":false,"error":{"code":"FORBIDDEN","message":"Access denied"}}`))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

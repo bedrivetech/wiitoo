@@ -9,10 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fusion-platform/pkg/database"
 	"github.com/fusion-platform/chat/internal/config"
 	"github.com/fusion-platform/chat/internal/handler"
+	"github.com/fusion-platform/chat/internal/repository"
 	"github.com/fusion-platform/chat/internal/service"
+	"github.com/fusion-platform/pkg/database"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -31,6 +32,8 @@ func main() {
 
 	chatSvc := service.NewChatService(cfg.RedisURL, pgPool, cfg)
 	h := handler.NewChatHandler(chatSvc)
+	chatRepo := repository.NewChatRepository(pgPool)
+	adminH := handler.NewAdminHandler(chatRepo)
 
 	r := chi.NewRouter()
 	r.Use(chimiddleware.RequestID)
@@ -39,6 +42,15 @@ func main() {
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Heartbeat("/healthz"))
 	r.Use(cors.Handler(cors.Options{AllowedOrigins: []string{"*"}, AllowedMethods: []string{"GET","POST","PATCH","DELETE","OPTIONS"}, AllowedHeaders: []string{"Accept","Authorization","Content-Type"}}))
+
+	// Admin routes — protected by API gateway/mesh. Inline middleware checks X-User-Role header.
+	r.Route("/api/v1/admin", func(r chi.Router) {
+		r.Use(adminRoleMiddleware)
+		r.Get("/messages", adminH.ListMessages)
+		r.Delete("/messages/{id}", adminH.DeleteMessage)
+		r.Post("/users/{userId}/chat-ban", adminH.BanUserFromChat)
+		r.Post("/streams/{streamId}/purge", adminH.PurgeStreamMessages)
+	})
 
 	r.Route("/api/v1/chat", func(r chi.Router) {
 		r.Get("/ws/{streamId}", h.WebSocket)
@@ -72,4 +84,19 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	srv.Shutdown(ctx)
+}
+
+// adminRoleMiddleware checks that the caller has an admin role.
+// In production, the API gateway or service mesh injects this header after JWT validation.
+func adminRoleMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		role := r.Header.Get("X-User-Role")
+		if role != "admin" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(`{"success":false,"error":{"code":"FORBIDDEN","message":"Access denied"}}`))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
