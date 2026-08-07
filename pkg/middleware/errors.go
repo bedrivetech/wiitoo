@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/fusion-platform/pkg/apierror"
+	"github.com/bedrivetech/wiitoo/pkg/apierror"
 )
 
 // ErrorHandler is middleware that catches errors returned by handler functions

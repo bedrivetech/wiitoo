@@ -2,10 +2,10 @@
 # Database initialization script — creates all databases and extensions
 set -e
 
-psql -U fusion -d postgres -c "CREATE DATABASE fusion;" 2>/dev/null || true
+psql -U wiitoo -d postgres -c "CREATE DATABASE wiitoo;" 2>/dev/null || true
 
 # Connect to fusion and create extensions
-psql -U fusion -d fusion << 'SQL'
+psql -U wiitoo -d fusion << 'SQL'
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -323,7 +323,7 @@ CREATE TABLE IF NOT EXISTS email_providers (
     weight INTEGER NOT NULL DEFAULT 1,
     last_health_check TIMESTAMP WITH TIME ZONE,
     is_healthy BOOLEAN NOT NULL DEFAULT true,
-    from_name TEXT NOT NULL DEFAULT 'Fusion Platform',
+    from_name TEXT NOT NULL DEFAULT 'Wiitoo',
     from_email TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/fusion-platform/auth/internal/model"
-	"github.com/fusion-platform/auth/internal/service"
+	"github.com/bedrivetech/wiitoo/auth/internal/model"
+	"github.com/bedrivetech/wiitoo/auth/internal/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/markbates/goth/gothic"
 )

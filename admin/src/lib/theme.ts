@@ -1,6 +1,6 @@
-// Fusion Platform — brand identity tokens
+// Wiitoo — brand identity tokens
 
-export const fusionBrand = {
+export const wiitooBrand = {
   primary: "#7C3AED",
   primaryHover: "#6D28D9",
   secondary: "#06B6D4",
@@ -27,4 +27,4 @@ export const lightTokens = {
   border: "#E5E7EB",
 } as const;
 
-export type FusionTheme = "dark" | "light";
+export type WiitooTheme = "dark" | "light";

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fusion-platform/pkg/apierror"
+	"github.com/bedrivetech/wiitoo/pkg/apierror"
 )
 
 // ParsePagination extracts page/perPage from query params.

@@ -1,6 +1,6 @@
 package svcconfig
 
-import "github.com/fusion-platform/pkg/config"
+import "github.com/bedrivetech/wiitoo/pkg/config"
 
 type Config struct {
 	Port              string
@@ -33,7 +33,7 @@ func Load() *Config {
 		StorageRegion:      config.FromEnv("STORAGE_REGION", "auto"),
 		StorageAccessKey:   config.FromEnv("STORAGE_ACCESS_KEY", ""),
 		StorageSecretKey:   config.FromEnv("STORAGE_SECRET_KEY", ""),
-		StorageBucket:      config.FromEnv("STORAGE_BUCKET", "fusion-platform"),
+		StorageBucket:      config.FromEnv("STORAGE_BUCKET", "wiitoo"),
 		PublicURL:          config.FromEnv("PUBLIC_URL", "http://localhost:8082"),
 		VideoProvider:      config.FromEnv("VIDEO_PROVIDER", "cloudflare"),
 		GcoreAPIKey:        config.FromEnv("GCORE_API_KEY", ""),

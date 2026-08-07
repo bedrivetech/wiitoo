@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/fusion-platform/pkg/apierror"
-	"github.com/fusion-platform/pkg/stream"
-	"github.com/fusion-platform/stream/internal/service"
+	"github.com/bedrivetech/wiitoo/pkg/apierror"
+	"github.com/bedrivetech/wiitoo/pkg/stream"
+	"github.com/bedrivetech/wiitoo/stream/internal/service"
 	"github.com/go-chi/chi/v5"
 )
 

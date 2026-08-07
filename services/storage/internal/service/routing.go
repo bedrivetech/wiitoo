@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fusion-platform/storage/internal/model"
-	"github.com/fusion-platform/storage/internal/repository"
+	"github.com/bedrivetech/wiitoo/storage/internal/model"
+	"github.com/bedrivetech/wiitoo/storage/internal/repository"
 )
 
 // RoutingService handles CRUD operations for upload routing rules.

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/fusion-platform/auth/internal/model"
-	"github.com/fusion-platform/auth/internal/service"
+	"github.com/bedrivetech/wiitoo/auth/internal/model"
+	"github.com/bedrivetech/wiitoo/auth/internal/service"
 )
 
 type contextKey string

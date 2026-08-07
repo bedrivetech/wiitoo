@@ -5,7 +5,7 @@ x-service-base: &service-base
     context: ../..
     dockerfile: services/service/Dockerfile
   networks:
-    - fusion
+    - wiitoo
   depends_on:
     postgres:
       condition: service_healthy
@@ -13,7 +13,7 @@ x-service-base: &service-base
       condition: service_started
   environment:
     &service-env
-    DATABASE_URL: postgres://fusion:fusion@postgres:5432/fusion?sslmode=disable
+    DATABASE_URL: postgres://wiitoo:wiitoo_change_me@postgres:5432/wiitoo?sslmode=disable
     REDIS_URL: redis://redis:6379/0
     ALLOWED_ORIGINS: "*"
 
@@ -22,21 +22,21 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: fusion
-      POSTGRES_PASSWORD: fusion
-      POSTGRES_DB: fusion
+      POSTGRES_USER: wiitoo
+      POSTGRES_PASSWORD: wiitoo_change_me
+      POSTGRES_DB: wiitoo
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./scripts/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fusion"]
+      test: ["CMD-SHELL", "pg_isready -U wiitoo"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
-      - fusion
+      - wiitoo
 
   redis:
     image: redis:7-alpine
@@ -45,7 +45,7 @@ services:
     volumes:
       - redisdata:/data
     networks:
-      - fusion
+      - wiitoo
 
   # ===== Media Server (RTMP ingest) =====
   mediamtx:
@@ -59,12 +59,12 @@ services:
       - ./mtx/mediamtx.yml:/mediamtx.yml
       - hlsdata:/recordings
     networks:
-      - fusion
+      - wiitoo
     depends_on:
       redis:
         condition: service_started
 
-  # ===== Fusion Platform Services =====
+  # ===== Wiitoo Services =====
   auth:
     <<: *service-base
     build:
@@ -164,7 +164,7 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     networks:
-      - fusion
+      - wiitoo
     depends_on:
       - auth
       - video

@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fusion-platform/pkg/apierror"
-	"github.com/fusion-platform/chat/internal/service"
+	"github.com/bedrivetech/wiitoo/pkg/apierror"
+	"github.com/bedrivetech/wiitoo/chat/internal/service"
 	"github.com/go-chi/chi/v5"
 )
 

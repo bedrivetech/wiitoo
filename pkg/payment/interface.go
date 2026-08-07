@@ -138,8 +138,8 @@ type Plan struct {
 
 // Standard plans for the platform.
 var (
-	PlanFusion    = Plan{ID: "plan_fusion", Name: "Fusion", Price: 5.00, Currency: "USD", Interval: "month"}
-	PlanFusionPlus = Plan{ID: "plan_fusion_plus", Name: "Fusion+", Price: 12.00, Currency: "USD", Interval: "month"}
+	PlanWiitoo    = Plan{ID: "plan_fusion", Name: "Wiitoo", Price: 5.00, Currency: "USD", Interval: "month"}
+	PlanWiitooPlus = Plan{ID: "plan_wiitoo_plus", Name: "Wiitoo+", Price: 12.00, Currency: "USD", Interval: "month"}
 	PlanCreator   = Plan{ID: "plan_creator", Name: "Creator", Price: 20.00, Currency: "USD", Interval: "month"}
 )
 

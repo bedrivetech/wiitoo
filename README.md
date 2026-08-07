@@ -1,4 +1,4 @@
-# Fusion Platform
+# Wiitoo
 
 The next-generation video platform — live-first, VOD-native, creator-wealthy,
 AI-moderated, multi-platform by default.

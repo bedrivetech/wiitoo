@@ -60,7 +60,7 @@ func Load() *Config {
 		WriteTimeout:      getDuration("WRITE_TIMEOUT", 30*time.Second),
 		DatabaseURL:       getEnv("DATABASE_URL", "postgres://fusion:fusion@localhost:5432/fusion?sslmode=disable"),
 		RedisURL:          getEnv("REDIS_URL", "redis://localhost:6379/0"),
-		RedisPrefix:       getEnv("REDIS_PREFIX", "fusion:auth:"),
+		RedisPrefix:       getEnv("REDIS_PREFIX", "wiitoo:auth:"),
 		JWTSecret:         getEnv("JWT_SECRET", "dev-secret-change-in-production"),
 		AccessTokenTTL:    getDuration("ACCESS_TOKEN_TTL", 15*time.Minute),
 		RefreshTokenTTL:   getDuration("REFRESH_TOKEN_TTL", 7*24*time.Hour),
@@ -79,9 +79,9 @@ func Load() *Config {
 		EmailProvider:     getEnv("EMAIL_PROVIDER", "console"),
 		ResendAPIKey:      getEnv("RESEND_API_KEY", ""),
 		FromEmail:         getEnv("FROM_EMAIL", "noreply@fusionplatform.com"),
-		FromName:          getEnv("FROM_NAME", "Fusion Platform"),
+		FromName:          getEnv("FROM_NAME", "Wiitoo"),
 		BaseURL:           getEnv("BASE_URL", "http://localhost:8080"),
-		AppName:           getEnv("APP_NAME", "Fusion Platform"),
+		AppName:           getEnv("APP_NAME", "Wiitoo"),
 	}
 }
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fusion-platform/storage/internal/model"
-	"github.com/fusion-platform/storage/internal/repository"
+	"github.com/bedrivetech/wiitoo/storage/internal/model"
+	"github.com/bedrivetech/wiitoo/storage/internal/repository"
 )
 
 // BucketService handles CRUD operations for storage buckets.

@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/fusion-platform/pkg/payment"
+	"github.com/bedrivetech/wiitoo/pkg/payment"
 )
 
 // PayPalProvider implements payment.Provider for PayPal.
@@ -236,7 +236,7 @@ func (p *PayPalProvider) SendPayout(ctx context.Context, req payment.PayoutReque
 	body := map[string]any{
 		"sender_batch_header": map[string]any{
 			"sender_batch_id":   req.Metadata["batch_id"],
-			"email_subject":     "You've received a payout from Fusion Platform",
+			"email_subject":     "You've received a payout from Wiitoo",
 			"email_message":     "Your earnings are now available.",
 		},
 		"items": []map[string]any{

@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fusion-platform/auth/internal/middleware"
-	"github.com/fusion-platform/auth/internal/repository"
-	"github.com/fusion-platform/pkg/adminhandler"
-	"github.com/fusion-platform/pkg/apierror"
+	"github.com/bedrivetech/wiitoo/auth/internal/middleware"
+	"github.com/bedrivetech/wiitoo/auth/internal/repository"
+	"github.com/bedrivetech/wiitoo/pkg/adminhandler"
+	"github.com/bedrivetech/wiitoo/pkg/apierror"
 	"github.com/go-chi/chi/v5"
 )
 

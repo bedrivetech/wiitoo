@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/fusion-platform/content/internal/config"
+	"github.com/bedrivetech/wiitoo/content/internal/config"
 )
 
 type ContentService struct {

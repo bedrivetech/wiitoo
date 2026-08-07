@@ -203,7 +203,7 @@ export default function EditProviderPage() {
 
           <Title level={5}>Sender Details</Title>
           <Form.Item label="From Name" name="fromName">
-            <Input placeholder="Fusion Platform" />
+            <Input placeholder="Wiitoo" />
           </Form.Item>
           <Form.Item label="From Email" name="fromEmail">
             <Input placeholder="noreply@fusionplatform.com" />

@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/fusion-platform/pkg/payment"
+	"github.com/bedrivetech/wiitoo/pkg/payment"
 )
 
 // PaddleProvider implements payment.Provider for Paddle (Merchant of Record).

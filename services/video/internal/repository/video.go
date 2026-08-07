@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fusion-platform/video/internal/model"
+	"github.com/bedrivetech/wiitoo/video/internal/model"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

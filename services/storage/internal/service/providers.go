@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/fusion-platform/pkg/storage"
-	"github.com/fusion-platform/storage/internal/model"
-	"github.com/fusion-platform/storage/internal/repository"
+	"github.com/bedrivetech/wiitoo/pkg/storage"
+	"github.com/bedrivetech/wiitoo/storage/internal/model"
+	"github.com/bedrivetech/wiitoo/storage/internal/repository"
 )
 
 // ProviderService handles CRUD operations for storage providers.

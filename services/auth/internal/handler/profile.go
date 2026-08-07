@@ -5,10 +5,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/fusion-platform/auth/internal/middleware"
-	"github.com/fusion-platform/auth/internal/model"
-	"github.com/fusion-platform/auth/internal/repository"
-	"github.com/fusion-platform/auth/internal/service"
+	"github.com/bedrivetech/wiitoo/auth/internal/middleware"
+	"github.com/bedrivetech/wiitoo/auth/internal/model"
+	"github.com/bedrivetech/wiitoo/auth/internal/repository"
+	"github.com/bedrivetech/wiitoo/auth/internal/service"
 )
 
 // ProfileHandler handles user profile operations.

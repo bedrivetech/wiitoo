@@ -1,6 +1,6 @@
-# Auth Service — Fusion Platform
+# Auth Service — Wiitoo
 
-The auth service handles user authentication, registration, OAuth, and session management for the Fusion Platform.
+The auth service handles user authentication, registration, OAuth, and session management for the Wiitoo.
 
 ## Architecture
 

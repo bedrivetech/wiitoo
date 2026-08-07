@@ -4,39 +4,39 @@
 
 :root {
   /* Light theme (default) */
-  --fusion-bg: #f5f6fa;
-  --fusion-surface: #ffffff;
-  --fusion-sidebar: #1a1b2e;
-  --fusion-text: #1a1a2e;
-  --fusion-text-secondary: #6b7280;
-  --fusion-border: #e5e7eb;
+  --wiitoo-bg: #f5f6fa;
+  --wiitoo-surface: #ffffff;
+  --wiitoo-sidebar: #1a1b2e;
+  --wiitoo-text: #1a1a2e;
+  --wiitoo-text-secondary: #6b7280;
+  --wiitoo-border: #e5e7eb;
 
   /* Brand colors */
-  --fusion-primary: #7c3aed;
-  --fusion-primary-hover: #6d28d9;
-  --fusion-secondary: #06b6d4;
-  --fusion-accent: #f59e0b;
-  --fusion-success: #10b981;
-  --fusion-danger: #ef4444;
+  --wiitoo-primary: #7c3aed;
+  --wiitoo-primary-hover: #6d28d9;
+  --wiitoo-secondary: #06b6d4;
+  --wiitoo-accent: #f59e0b;
+  --wiitoo-success: #10b981;
+  --wiitoo-danger: #ef4444;
 
   /* Surface alpha */
-  --fusion-hover-overlay: rgba(0, 0, 0, 0.04);
-  --fusion-active-overlay: rgba(0, 0, 0, 0.06);
+  --wiitoo-hover-overlay: rgba(0, 0, 0, 0.04);
+  --wiitoo-active-overlay: rgba(0, 0, 0, 0.06);
 
   /* Transitions */
   --theme-transition: 0.3s ease;
 }
 
 [data-theme="dark"] {
-  --fusion-bg: #0b0d15;
-  --fusion-surface: #151724;
-  --fusion-sidebar: #0f1119;
-  --fusion-text: #e8e8f0;
-  --fusion-text-secondary: #9ca3af;
-  --fusion-border: #1e2030;
+  --wiitoo-bg: #0b0d15;
+  --wiitoo-surface: #151724;
+  --wiitoo-sidebar: #0f1119;
+  --wiitoo-text: #e8e8f0;
+  --wiitoo-text-secondary: #9ca3af;
+  --wiitoo-border: #1e2030;
 
-  --fusion-hover-overlay: rgba(255, 255, 255, 0.06);
-  --fusion-active-overlay: rgba(255, 255, 255, 0.1);
+  --wiitoo-hover-overlay: rgba(255, 255, 255, 0.06);
+  --wiitoo-active-overlay: rgba(255, 255, 255, 0.1);
 }
 
 /* ===== Theme transitions ===== */
@@ -55,8 +55,8 @@ body,
 /* ===== Base ===== */
 
 body {
-  background: var(--fusion-bg);
-  color: var(--fusion-text);
+  background: var(--wiitoo-bg);
+  color: var(--wiitoo-text);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;

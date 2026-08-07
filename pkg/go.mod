@@ -1,4 +1,4 @@
-module github.com/fusion-platform/pkg
+module github.com/bedrivetech/wiitoo/pkg
 
 go 1.23
 

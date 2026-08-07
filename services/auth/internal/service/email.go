@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fusion-platform/pkg/email"
+	"github.com/bedrivetech/wiitoo/pkg/email"
 )
 
 // EmailSender provides an interface for sending emails.

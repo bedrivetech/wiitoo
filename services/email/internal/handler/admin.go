@@ -3,10 +3,10 @@ package handler
 import (
 	"net/http"
 
-	"github.com/fusion-platform/email/internal/model"
-	"github.com/fusion-platform/email/internal/repository"
-	"github.com/fusion-platform/pkg/adminhandler"
-	"github.com/fusion-platform/pkg/apierror"
+	"github.com/bedrivetech/wiitoo/email/internal/model"
+	"github.com/bedrivetech/wiitoo/email/internal/repository"
+	"github.com/bedrivetech/wiitoo/pkg/adminhandler"
+	"github.com/bedrivetech/wiitoo/pkg/apierror"
 )
 
 // AdminHandler handles admin-only email operations.

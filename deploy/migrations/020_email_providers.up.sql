@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS email_providers (
     weight INTEGER NOT NULL DEFAULT 1,
     last_health_check TIMESTAMP WITH TIME ZONE,
     is_healthy BOOLEAN NOT NULL DEFAULT true,
-    from_name TEXT NOT NULL DEFAULT 'Fusion Platform',
+    from_name TEXT NOT NULL DEFAULT 'Wiitoo',
     from_email TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

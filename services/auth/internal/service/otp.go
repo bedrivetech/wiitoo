@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fusion-platform/auth/internal/config"
-	"github.com/fusion-platform/auth/internal/model"
+	"github.com/bedrivetech/wiitoo/auth/internal/config"
+	"github.com/bedrivetech/wiitoo/auth/internal/model"
 	"github.com/redis/go-redis/v9"
 )
 

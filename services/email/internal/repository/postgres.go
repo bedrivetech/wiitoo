@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fusion-platform/email/internal/model"
+	"github.com/bedrivetech/wiitoo/email/internal/model"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -104,7 +104,7 @@ func (r *EmailRepository) CreateProvider(ctx context.Context, req model.CreatePr
 
 	fromName := req.FromName
 	if fromName == "" {
-		fromName = "Fusion Platform"
+		fromName = "Wiitoo"
 	}
 
 	row := r.pool.QueryRow(ctx, `

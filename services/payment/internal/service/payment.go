@@ -10,10 +10,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	ppkg "github.com/fusion-platform/pkg/payment"
-	pprovider "github.com/fusion-platform/pkg/payment/provider"
-	"github.com/fusion-platform/payment/internal/config"
-	"github.com/fusion-platform/payment/internal/model"
+	ppkg "github.com/bedrivetech/wiitoo/pkg/payment"
+	pprovider "github.com/bedrivetech/wiitoo/pkg/payment/provider"
+	"github.com/bedrivetech/wiitoo/payment/internal/config"
+	"github.com/bedrivetech/wiitoo/payment/internal/model"
 )
 
 type PaymentService struct {
@@ -274,7 +274,7 @@ func (s *PaymentService) ProcessPayout(ctx context.Context, creatorID string) (*
 }
 
 func (s *PaymentService) ListPlans() []ppkg.Plan {
-	return []ppkg.Plan{ppkg.PlanFusion, ppkg.PlanFusionPlus, ppkg.PlanCreator}
+	return []ppkg.Plan{ppkg.PlanWiitoo, ppkg.PlanWiitooPlus, ppkg.PlanCreator}
 }
 
 func (s *PaymentService) getSubscription(ctx context.Context, id string) (*model.Subscription, error) {

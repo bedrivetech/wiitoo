@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"github.com/google/uuid"
-	"github.com/fusion-platform/chat/internal/config"
+	"github.com/bedrivetech/wiitoo/chat/internal/config"
 )
 
 var upgrader = websocket.Upgrader{

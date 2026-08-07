@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/fusion-platform/payment/internal/service"
+	"github.com/bedrivetech/wiitoo/payment/internal/service"
 	"github.com/go-chi/chi/v5"
 )
 

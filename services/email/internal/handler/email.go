@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/fusion-platform/email/internal/model"
-	"github.com/fusion-platform/email/internal/service"
-	"github.com/fusion-platform/pkg/apierror"
+	"github.com/bedrivetech/wiitoo/email/internal/model"
+	"github.com/bedrivetech/wiitoo/email/internal/service"
+	"github.com/bedrivetech/wiitoo/pkg/apierror"
 )
 
 // EmailHandler handles transactional email sending endpoints.

@@ -17,7 +17,7 @@ import {
   MailOutlined,
   RightOutlined,
 } from "@ant-design/icons";
-import { fusionBrand } from "@/lib/theme";
+import { wiitooBrand } from "@/lib/theme";
 
 const { Title, Text } = Typography;
 
@@ -56,7 +56,7 @@ export default function LoginPage() {
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                background: `linear-gradient(135deg, ${fusionBrand.primary}, ${fusionBrand.secondary})`,
+                background: `linear-gradient(135deg, ${wiitooBrand.primary}, ${wiitooBrand.secondary})`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -156,7 +156,7 @@ export default function LoginPage() {
                 style={{
                   height: 46,
                   borderRadius: 8,
-                  background: `linear-gradient(135deg, ${fusionBrand.primary}, #8B5CF6)`,
+                  background: `linear-gradient(135deg, ${wiitooBrand.primary}, #8B5CF6)`,
                   border: "none",
                   boxShadow: `0 4px 14px rgba(124,58,237,0.4)`,
                   fontWeight: 600,
@@ -170,7 +170,7 @@ export default function LoginPage() {
 
           <div style={{ marginTop: 20, textAlign: "center" }}>
             <Text type="secondary" style={{ fontSize: 12 }}>
-              © {new Date().getFullYear()} Fusion Platform
+              © {new Date().getFullYear()} Wiitoo
             </Text>
           </div>
         </Card>

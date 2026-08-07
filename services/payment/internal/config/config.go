@@ -1,6 +1,6 @@
 package svcconfig
 
-import "github.com/fusion-platform/pkg/config"
+import "github.com/bedrivetech/wiitoo/pkg/config"
 
 type Config struct {
 	Port             string

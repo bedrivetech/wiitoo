@@ -1,9 +1,9 @@
-module github.com/fusion-platform/email
+module github.com/bedrivetech/wiitoo/email
 
 go 1.23
 
 require (
-	github.com/fusion-platform/pkg v0.0.0
+	github.com/bedrivetech/wiitoo/pkg v0.0.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/cors v1.2.1
 	github.com/jackc/pgx/v5 v5.7.1
@@ -18,4 +18,4 @@ require (
 	golang.org/x/text v0.19.0 // indirect
 )
 
-replace github.com/fusion-platform/pkg => ../../pkg
+replace github.com/bedrivetech/wiitoo/pkg => ../../pkg

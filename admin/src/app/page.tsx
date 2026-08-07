@@ -27,7 +27,7 @@ import {
   Flex,
 } from "antd";
 import { useRouter } from "next/navigation";
-import { fusionBrand } from "@/lib/theme";
+import { wiitooBrand } from "@/lib/theme";
 import { useDarkMode } from "@/lib/use-dark-mode";
 import { darkTokens } from "@/lib/theme";
 
@@ -260,7 +260,7 @@ export default function DashboardPage() {
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 22,
-                color: fusionBrand.primary,
+                color: wiitooBrand.primary,
               }}
             >
               {icon}
@@ -269,14 +269,14 @@ export default function DashboardPage() {
           {trend && (
             <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
               {trend === "up" ? (
-                <ArrowUpOutlined style={{ color: fusionBrand.success, fontSize: 12 }} />
+                <ArrowUpOutlined style={{ color: wiitooBrand.success, fontSize: 12 }} />
               ) : (
-                <ArrowDownOutlined style={{ color: fusionBrand.danger, fontSize: 12 }} />
+                <ArrowDownOutlined style={{ color: wiitooBrand.danger, fontSize: 12 }} />
               )}
               <Text
                 style={{
                   fontSize: 12,
-                  color: trend === "up" ? fusionBrand.success : fusionBrand.danger,
+                  color: trend === "up" ? wiitooBrand.success : wiitooBrand.danger,
                 }}
               >
                 {trendLabel}
@@ -366,8 +366,8 @@ export default function DashboardPage() {
                 icon={<PlusOutlined />}
                 onClick={() => router.push("/resources/users/create")}
                 style={{
-                  background: fusionBrand.primary,
-                  borderColor: fusionBrand.primary,
+                  background: wiitooBrand.primary,
+                  borderColor: wiitooBrand.primary,
                   boxShadow: `0 2px 8px rgba(124,58,237,0.3)`,
                 }}
               >

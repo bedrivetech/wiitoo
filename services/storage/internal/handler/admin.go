@@ -3,9 +3,9 @@ package handler
 import (
 	"net/http"
 
-	"github.com/fusion-platform/pkg/adminhandler"
-	"github.com/fusion-platform/pkg/apierror"
-	"github.com/fusion-platform/storage/internal/repository"
+	"github.com/bedrivetech/wiitoo/pkg/adminhandler"
+	"github.com/bedrivetech/wiitoo/pkg/apierror"
+	"github.com/bedrivetech/wiitoo/storage/internal/repository"
 )
 
 // AdminHandler handles admin-only storage operations.

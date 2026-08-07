@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 001_create_users.sql
--- Core users table for the Fusion Platform auth service.
+-- Core users table for the Wiitoo auth service.
 
 CREATE TABLE IF NOT EXISTS users (
     id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),

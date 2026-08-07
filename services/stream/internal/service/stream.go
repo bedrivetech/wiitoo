@@ -13,8 +13,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/fusion-platform/pkg/stream"
-	"github.com/fusion-platform/stream/internal/config"
+	"github.com/bedrivetech/wiitoo/pkg/stream"
+	"github.com/bedrivetech/wiitoo/stream/internal/config"
 )
 
 type StreamService struct {

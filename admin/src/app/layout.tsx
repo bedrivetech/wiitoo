@@ -10,7 +10,7 @@ import { RefineKbarProvider } from "@refinedev/kbar";
 import { Suspense } from "react";
 import "./globals.css";
 import { DarkModeProvider, useDarkMode } from "@/lib/use-dark-mode";
-import { fusionBrand, darkTokens, lightTokens } from "@/lib/theme";
+import { wiitooBrand, darkTokens, lightTokens } from "@/lib/theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,12 +34,12 @@ function ThemedApp({ children }: { children: React.ReactNode }) {
           ? antdTheme.darkAlgorithm
           : antdTheme.defaultAlgorithm,
         token: {
-          colorPrimary: fusionBrand.primary,
-          colorPrimaryHover: fusionBrand.primaryHover,
-          colorSuccess: fusionBrand.success,
-          colorError: fusionBrand.danger,
-          colorWarning: fusionBrand.accent,
-          colorInfo: fusionBrand.secondary,
+          colorPrimary: wiitooBrand.primary,
+          colorPrimaryHover: wiitooBrand.primaryHover,
+          colorSuccess: wiitooBrand.success,
+          colorError: wiitooBrand.danger,
+          colorWarning: wiitooBrand.accent,
+          colorInfo: wiitooBrand.secondary,
           borderRadius: 8,
           fontFamily: "var(--font-geist-sans), sans-serif",
           colorBgContainer: tokens.surface,
@@ -58,7 +58,7 @@ function ThemedApp({ children }: { children: React.ReactNode }) {
             darkItemBg: darkTokens.sidebar,
             darkItemColor: "#c4c4d0",
             darkItemSelectedBg: "rgba(124, 58, 237, 0.15)",
-            darkItemSelectedColor: fusionBrand.primary,
+            darkItemSelectedColor: wiitooBrand.primary,
             itemBg: tokens.surface,
           },
           Card: {

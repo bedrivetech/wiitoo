@@ -1,4 +1,4 @@
-# Fusion Platform — Architecture & Decisions
+# Wiitoo — Architecture & Decisions
 
 *Last updated: 2025-07-18*
 

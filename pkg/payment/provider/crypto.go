@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fusion-platform/pkg/payment"
+	"github.com/bedrivetech/wiitoo/pkg/payment"
 )
 
 // CryptoProvider handles USDC payments on Solana.

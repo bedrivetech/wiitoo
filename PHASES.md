@@ -1,4 +1,4 @@
-# Build Phases — Fusion Platform Backend & Admin
+# Build Phases — Wiitoo Backend & Admin
 
 ## Overview
 

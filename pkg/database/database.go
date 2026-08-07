@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/fusion-platform/pkg/config"
+	"github.com/bedrivetech/wiitoo/pkg/config"
 )
 
 // NewPool creates a new PostgreSQL connection pool from config.

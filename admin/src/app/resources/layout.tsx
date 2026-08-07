@@ -43,7 +43,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useKBar } from "@refinedev/kbar";
 import { RefineKbar } from "@refinedev/kbar";
 import { useDarkMode } from "@/lib/use-dark-mode";
-import { fusionBrand, darkTokens } from "@/lib/theme";
+import { wiitooBrand, darkTokens } from "@/lib/theme";
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -258,7 +258,7 @@ export default function ResourcesLayout({
               width: 32,
               height: 32,
               borderRadius: 8,
-              background: `linear-gradient(135deg, ${fusionBrand.primary}, ${fusionBrand.secondary})`,
+              background: `linear-gradient(135deg, ${wiitooBrand.primary}, ${wiitooBrand.secondary})`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -360,7 +360,7 @@ export default function ResourcesLayout({
                 type="text"
                 icon={
                   isDark ? (
-                    <SunOutlined style={{ fontSize: 18, color: fusionBrand.accent }} />
+                    <SunOutlined style={{ fontSize: 18, color: wiitooBrand.accent }} />
                   ) : (
                     <MoonOutlined style={{ fontSize: 18, color: "#6b7280" }} />
                   )
@@ -413,7 +413,7 @@ export default function ResourcesLayout({
                 <Avatar
                   size="small"
                   style={{
-                    background: `linear-gradient(135deg, ${fusionBrand.primary}, ${fusionBrand.secondary})`,
+                    background: `linear-gradient(135deg, ${wiitooBrand.primary}, ${wiitooBrand.secondary})`,
                     color: "#fff",
                     fontWeight: 600,
                   }}

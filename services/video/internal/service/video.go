@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fusion-platform/pkg/storage"
-	"github.com/fusion-platform/pkg/videopipeline"
-	"github.com/fusion-platform/video/internal/config"
-	"github.com/fusion-platform/video/internal/model"
-	"github.com/fusion-platform/video/internal/repository"
+	"github.com/bedrivetech/wiitoo/pkg/storage"
+	"github.com/bedrivetech/wiitoo/pkg/videopipeline"
+	"github.com/bedrivetech/wiitoo/video/internal/config"
+	"github.com/bedrivetech/wiitoo/video/internal/model"
+	"github.com/bedrivetech/wiitoo/video/internal/repository"
 	"github.com/google/uuid"
 )
 

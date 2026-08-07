@@ -202,7 +202,7 @@ export default function CreateProviderPage() {
             name="fromName"
             rules={[{ required: true, message: "From name is required" }]}
           >
-            <Input placeholder="Fusion Platform" />
+            <Input placeholder="Wiitoo" />
           </Form.Item>
           <Form.Item
             label="From Email"

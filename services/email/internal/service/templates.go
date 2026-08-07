@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fusion-platform/email/internal/model"
-	"github.com/fusion-platform/email/internal/repository"
+	"github.com/bedrivetech/wiitoo/email/internal/model"
+	"github.com/bedrivetech/wiitoo/email/internal/repository"
 )
 
 // TemplateService handles CRUD and rendering for email templates.

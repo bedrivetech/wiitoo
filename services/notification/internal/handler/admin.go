@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/fusion-platform/notification/internal/repository"
-	"github.com/fusion-platform/pkg/apierror"
+	"github.com/bedrivetech/wiitoo/notification/internal/repository"
+	"github.com/bedrivetech/wiitoo/pkg/apierror"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
