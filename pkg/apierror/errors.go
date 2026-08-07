@@ -2,6 +2,7 @@ package apierror
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 )
@@ -32,6 +33,8 @@ const (
 )
 
 // APIError is a structured error returned by all services.
+// It implements the error interface and carries machine-readable code,
+// a human-readable message, and optional details (e.g. validation errors).
 type APIError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
@@ -39,7 +42,39 @@ type APIError struct {
 }
 
 func (e *APIError) Error() string {
+	if e.Details != nil {
+		return fmt.Sprintf("%s: %s (details: %v)", e.Code, e.Message, e.Details)
+	}
 	return e.Message
+}
+
+// NewError constructs a new APIError with the given code, message, and optional details.
+func NewError(code, message string, details any) *APIError {
+	return &APIError{Code: code, Message: message, Details: details}
+}
+
+// ValidationError creates an APIError for a field-level validation failure.
+// The field parameter is the name of the field that failed validation.
+// The reason parameter is a human-readable explanation of why it failed.
+// The resulting error has code VALIDATION_ERROR and details containing
+// the field and reason.
+func ValidationError(field, reason string) *APIError {
+	return &APIError{
+		Code:    ErrCodeValidationError,
+		Message: "Validation error",
+		Details: map[string]string{field: reason},
+	}
+}
+
+// InvalidInput creates an APIError for an invalid input payload.
+// The details parameter can contain structured error information,
+// such as a map of field→reason pairs or a list of validation messages.
+func InvalidInput(details any) *APIError {
+	return &APIError{
+		Code:    ErrCodeInvalidRequestBody,
+		Message: "Invalid request body or input",
+		Details: details,
+	}
 }
 
 // HTTPStatus maps error codes to HTTP status codes.

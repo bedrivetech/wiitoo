@@ -58,7 +58,7 @@ func main() {
 
 	// Initialize services
 	authService := service.NewAuthService(userRepo, cfg)
-	otpService := service.NewOTPService(rdb, cfg)
+	otpService := service.NewOTPServiceWithRedis(rdb, cfg)
 	oauthService := service.NewOAuthService(userRepo, authService, cfg)
 
 	// Initialize OAuth providers

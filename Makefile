@@ -21,6 +21,9 @@ help() {
   echo "  db-migrate       Run migrations"
   echo "  db-reset         Drop and recreate all tables"
   echo "  db-seed          Seed initial data"
+  echo "  db-migrate-up    Apply all pending migrations (golang-migrate)"
+  echo "  db-migrate-down  Roll back all migrations"
+  echo "  db-migrate-create Create a new migration pair"
   echo ""
   echo "Build:"
   echo "  build            Build all service binaries"
@@ -101,7 +104,17 @@ case "$cmd" in
     cd "$FUSION_HOME/deploy"
     docker compose exec -T postgres bash < scripts/seed-data.sh || true
     ;;
-
+  db-migrate-up)
+    DATABASE_URL="postgres://fusion:fusion@localhost:5432/fusion?sslmode=disable" \
+      bash "$FUSION_HOME/deploy/scripts/migrate.sh" up
+    ;;
+  db-migrate-down)
+    DATABASE_URL="postgres://fusion:fusion@localhost:5432/fusion?sslmode=disable" \
+      bash "$FUSION_HOME/deploy/scripts/migrate.sh" down
+    ;;
+  db-migrate-create)
+    bash "$FUSION_HOME/deploy/scripts/migrate.sh" create "$@"
+    ;;
   # Build
   build)
     for svc in auth video chat payment stream content notification; do

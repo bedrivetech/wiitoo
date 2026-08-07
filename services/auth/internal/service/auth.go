@@ -13,14 +13,30 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// UserRepository defines the interface for user persistence operations.
+type UserRepository interface {
+	Create(ctx context.Context, email, password, username string) (*model.User, error)
+	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	FindByUsername(ctx context.Context, username string) (*model.User, error)
+	FindByID(ctx context.Context, id string) (*model.User, error)
+	SaveRefreshToken(ctx context.Context, userID, tokenHash string, expiresAt time.Time) error
+	FindRefreshToken(ctx context.Context, tokenHash string) (*model.RefreshToken, error)
+	RevokeRefreshToken(ctx context.Context, tokenHash string) error
+	RevokeAllUserRefreshTokens(ctx context.Context, userID string) error
+	UpdateProfile(ctx context.Context, id string, displayName, avatarURL string) (*model.User, error)
+}
+
+// Ensure the concrete type satisfies the interface at compile time.
+var _ UserRepository = (*repository.UserRepository)(nil)
+
 // AuthService handles user registration, login, and JWT management.
 type AuthService struct {
-	repo   *repository.UserRepository
+	repo   UserRepository
 	cfg    *config.Config
 	hasher *Hasher
 }
 
-func NewAuthService(repo *repository.UserRepository, cfg *config.Config) *AuthService {
+func NewAuthService(repo UserRepository, cfg *config.Config) *AuthService {
 	return &AuthService{
 		repo:   repo,
 		cfg:    cfg,
@@ -276,7 +292,7 @@ func (s *AuthService) generateAccessToken(user *model.User) (string, error) {
 }
 
 func (s *AuthService) generateRefreshToken() (string, error) {
-	return uuid.New().String() + "-" + uuid.New().String(), nil
+	return uuid.New().String() + uuid.New().String()[0:8], nil
 }
 
 // Hasher provides password and token hashing utilities.

@@ -35,32 +35,121 @@ const (
 	OTPPurposeEmailChangeNew OTPPurpose = "email_change_new"
 )
 
-// OTPService handles OTP generation and verification via Redis.
-type OTPService struct {
-	rdb     *redis.Client
-	cfg     *config.Config
+// OTPStorage defines the interface for OTP persistence.
+// Implementations: redisStorage (real Redis), mapStorage (in-memory for tests).
+type OTPStorage interface {
+	Get(ctx context.Context, key string) (string, error)
+	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
+	Del(ctx context.Context, keys ...string) error
+	Exists(ctx context.Context, keys ...string) (int64, error)
+	TTL(ctx context.Context, key string) (time.Duration, error)
+	Incr(ctx context.Context, key string) (int64, error)
+	Expire(ctx context.Context, key string, expiration time.Duration) (bool, error)
+	Pipeline() OTPPipeline
 }
 
-func NewOTPService(rdb *redis.Client, cfg *config.Config) *OTPService {
+// OTPPipeline defines a pipeline interface for batched Redis commands.
+type OTPPipeline interface {
+	Incr(ctx context.Context, key string) *redis.IntCmd
+	Expire(ctx context.Context, key string, expiration time.Duration) *redis.BoolCmd
+	Exec(ctx context.Context) ([]redis.Cmder, error)
+}
+
+// redisStorage wraps a *redis.Client to implement OTPStorage.
+type redisStorage struct {
+	client *redis.Client
+}
+
+func (s *redisStorage) Get(ctx context.Context, key string) (string, error) {
+	return s.client.Get(ctx, key).Result()
+}
+
+func (s *redisStorage) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+	return s.client.Set(ctx, key, value, expiration).Err()
+}
+
+func (s *redisStorage) Del(ctx context.Context, keys ...string) error {
+	return s.client.Del(ctx, keys...).Err()
+}
+
+func (s *redisStorage) Exists(ctx context.Context, keys ...string) (int64, error) {
+	return s.client.Exists(ctx, keys...).Result()
+}
+
+func (s *redisStorage) TTL(ctx context.Context, key string) (time.Duration, error) {
+	return s.client.TTL(ctx, key).Result()
+}
+
+func (s *redisStorage) Incr(ctx context.Context, key string) (int64, error) {
+	return s.client.Incr(ctx, key).Result()
+}
+
+func (s *redisStorage) Expire(ctx context.Context, key string, expiration time.Duration) (bool, error) {
+	return s.client.Expire(ctx, key, expiration).Result()
+}
+
+func (s *redisStorage) Pipeline() OTPPipeline {
+	return &redisPipeline{pipe: s.client.Pipeline()}
+}
+
+// redisPipeline wraps a redis.Pipeline to implement OTPPipeline.
+type redisPipeline struct {
+	pipe redis.Pipeliner
+}
+
+func (p *redisPipeline) Incr(ctx context.Context, key string) *redis.IntCmd {
+	return p.pipe.Incr(ctx, key)
+}
+
+func (p *redisPipeline) Expire(ctx context.Context, key string, expiration time.Duration) *redis.BoolCmd {
+	return p.pipe.Expire(ctx, key, expiration)
+}
+
+func (p *redisPipeline) Exec(ctx context.Context) ([]redis.Cmder, error) {
+	return p.pipe.Exec(ctx)
+}
+
+// Compile-time interface checks.
+var _ OTPStorage = (*redisStorage)(nil)
+var _ OTPPipeline = (*redisPipeline)(nil)
+
+// OTPService handles OTP generation and verification.
+type OTPService struct {
+	rdb OTPStorage
+	cfg *config.Config
+}
+
+// NewOTPService creates an OTPService with the given storage backend.
+func NewOTPService(rdb OTPStorage, cfg *config.Config) *OTPService {
 	return &OTPService{
 		rdb: rdb,
 		cfg: cfg,
 	}
 }
 
-// GenerateOTP creates a 6-digit OTP, hashes it, stores in Redis with TTL.
+// NewOTPServiceWithRedis creates an OTPService backed by a real *redis.Client.
+func NewOTPServiceWithRedis(client *redis.Client, cfg *config.Config) *OTPService {
+	return &OTPService{
+		rdb: &redisStorage{client: client},
+		cfg: cfg,
+	}
+}
+
+// GenerateOTP creates a 6-digit OTP, hashes it, stores with TTL.
 // Returns the plaintext OTP so the caller can send it to the user.
 func (s *OTPService) GenerateOTP(ctx context.Context, userID string, purpose OTPPurpose, ttl time.Duration) (string, error) {
 	rateKey := fmt.Sprintf("%s:%s:%s", s.cfg.RedisPrefix, otpRateKey, userID)
 
 	// Check rate limit: max OTPs per hour
-	count, err := s.rdb.Get(ctx, rateKey).Int()
-	if err != nil && err != redis.Nil {
+	countStr, err := s.rdb.Get(ctx, rateKey)
+	if err == nil {
+		count, _ := strconv.Atoi(countStr)
+		if count >= s.cfg.OTPMaxPerHour {
+			return "", serviceError(model.ErrCodeOTPRateLimit,
+				fmt.Sprintf("Maximum %d OTP requests per hour exceeded", s.cfg.OTPMaxPerHour))
+		}
+	} else if err != redis.Nil {
 		return "", fmt.Errorf("failed to check OTP rate limit: %w", err)
-	}
-	if count >= s.cfg.OTPMaxPerHour {
-		return "", serviceError(model.ErrCodeOTPRateLimit,
-			fmt.Sprintf("Maximum %d OTP requests per hour exceeded", s.cfg.OTPMaxPerHour))
 	}
 
 	// Generate 6 random digits
@@ -74,13 +163,13 @@ func (s *OTPService) GenerateOTP(ctx context.Context, userID string, purpose OTP
 
 	// Store hashed OTP
 	otpKey := fmt.Sprintf("%s%s:%s:%s", s.cfg.RedisPrefix, otpKeyPrefix, string(purpose), userID)
-	if err := s.rdb.Set(ctx, otpKey, hash, ttl).Err(); err != nil {
+	if err := s.rdb.Set(ctx, otpKey, hash, ttl); err != nil {
 		return "", fmt.Errorf("failed to store OTP: %w", err)
 	}
 
 	// Reset attempts counter for this OTP
 	attemptKey := fmt.Sprintf("%s%s:%s:%s:%s", s.cfg.RedisPrefix, otpAttemptKey, string(purpose), userID, hash)
-	s.rdb.Set(ctx, attemptKey, 0, ttl)
+	_ = s.rdb.Set(ctx, attemptKey, 0, ttl)
 
 	// Increment rate counter with TTL
 	pipe := s.rdb.Pipeline()
@@ -94,33 +183,28 @@ func (s *OTPService) GenerateOTP(ctx context.Context, userID string, purpose OTP
 }
 
 // VerifyOTP checks if the provided code matches the stored hash.
-// Returns true if valid, false if not. Deletes on success, invalidates on max attempts.
 func (s *OTPService) VerifyOTP(ctx context.Context, userID string, purpose OTPPurpose, code string) (bool, error) {
 	otpKey := fmt.Sprintf("%s%s:%s:%s", s.cfg.RedisPrefix, otpKeyPrefix, string(purpose), userID)
-	storedHash, err := s.rdb.Get(ctx, otpKey).Result()
+	storedHash, err := s.rdb.Get(ctx, otpKey)
 	if err != nil {
-		if err == redis.Nil {
-			return false, nil // expired or never generated
-		}
-		return false, fmt.Errorf("failed to get OTP from Redis: %w", err)
+		return false, nil // expired or never generated
 	}
 
 	inputHash := hashOTP(code)
 
 	// Check attempts
 	attemptKey := fmt.Sprintf("%s%s:%s:%s:%s", s.cfg.RedisPrefix, otpAttemptKey, string(purpose), userID, storedHash)
-	attempts, err := s.rdb.Get(ctx, attemptKey).Int()
-	if err != nil && err != redis.Nil {
-		return false, fmt.Errorf("failed to get OTP attempts: %w", err)
+	attemptsStr, err := s.rdb.Get(ctx, attemptKey)
+	attempts := 0
+	if err == nil {
+		attempts, _ = strconv.Atoi(attemptsStr)
 	}
 	if attempts >= maxOTPAttempts {
-		// Too many attempts — delete the OTP
 		s.rdb.Del(ctx, otpKey, attemptKey)
 		return false, nil
 	}
 
 	if storedHash != inputHash {
-		// Increment attempts
 		s.rdb.Incr(ctx, attemptKey)
 		return false, nil
 	}
@@ -132,21 +216,13 @@ func (s *OTPService) VerifyOTP(ctx context.Context, userID string, purpose OTPPu
 
 // CanResendOTP checks if the user can request another OTP (cooldown check).
 func (s *OTPService) CanResendOTP(ctx context.Context, userID string, purpose OTPPurpose) (bool, time.Duration) {
-	rateKey := fmt.Sprintf("%s%s:%s", s.cfg.RedisPrefix, otpRateKey, userID)
-	// Use the TTL of the rate key as a proxy for last request time.
-	ttl, err := s.rdb.TTL(ctx, rateKey).Result()
-	if err != nil || ttl < 0 {
-		return true, 0
-	}
-	// If the TTL is close to an hour, we just started. The cooldown is from the last increment.
-	// We use a separate cooldown key for precise tracking.
 	cooldownKey := fmt.Sprintf("%s%s:%s:%s:cooldown", s.cfg.RedisPrefix, otpRateKey, string(purpose), userID)
-	exists, err := s.rdb.Exists(ctx, cooldownKey).Result()
+	exists, err := s.rdb.Exists(ctx, cooldownKey)
 	if err != nil || exists == 0 {
 		return true, 0
 	}
 
-	remaining, err := s.rdb.TTL(ctx, cooldownKey).Result()
+	remaining, err := s.rdb.TTL(ctx, cooldownKey)
 	if err != nil || remaining < 0 {
 		return true, 0
 	}
@@ -156,10 +232,10 @@ func (s *OTPService) CanResendOTP(ctx context.Context, userID string, purpose OT
 // MarkOTPResend marks the cooldown for resending OTP.
 func (s *OTPService) MarkOTPResend(ctx context.Context, userID string, purpose OTPPurpose) error {
 	cooldownKey := fmt.Sprintf("%s%s:%s:%s:cooldown", s.cfg.RedisPrefix, otpRateKey, string(purpose), userID)
-	return s.rdb.Set(ctx, cooldownKey, 1, otpCooldown).Err()
+	return s.rdb.Set(ctx, cooldownKey, 1, otpCooldown)
 }
 
-// hasher for OTP
+// hashOTP hashes an OTP code for secure storage.
 func hashOTP(code string) string {
 	h := sha256.Sum256([]byte(strings.TrimSpace(code)))
 	return hex.EncodeToString(h[:])
