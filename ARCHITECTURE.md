@@ -146,13 +146,49 @@ Will define in Go code: `ObjectStore`, `Cache`, `EmailSender`, `TaskQueue`, `Vid
 
 ## Scaffold Status
 
-- [ ] Project structure (Chi + pgx + sqlc)
-- [x] Auth service (users, JWT, OAuth)
-- [ ] Storage interface (S3-compatible)
-- [ ] Video pipeline abstraction
-- [ ] Chat service (WebSocket + Redis pub/sub)
-- [ ] Simulcast bridge
-- [ ] Payment service
-- [ ] Deployment (Docker Compose)
+### ✅ Shared Packages (`pkg/`)
+- [x] `pkg/apierror` — Standard API errors, response envelope, JSON helpers
+- [x] `pkg/storage` — ObjectStore interface + S3 implementation (multipart, presigned, list)
+- [x] `pkg/cache` — Cache interface + Redis implementation (pub/sub included)
+- [x] `pkg/queue` — TaskQueue interface + Asynq implementation
+- [x] `pkg/email` — Sender interface + ConsoleSender + SMTPSender + Builder (templates)
+- [x] `pkg/config` — Environment variable loading with defaults
+- [x] `pkg/middleware` — RequestLogger, Recovery, ServiceAuth, Auth, CORS
+- [x] `pkg/database` — PGX pool creation helpers
+- [x] `pkg/payment` — Provider + PayoutProvider interfaces; Ledger interface
+- [x] `pkg/payment/provider` — PaddleProvider, PayPalProvider (+ payouts), CryptoProvider (USDC/Solana)
+- [x] `pkg/transcode` — Transcoder interface, Presets, all request/response types
+- [x] `pkg/stream` — Stream, ChatMessage, Category, IngestServer, AnalyticsSnapshot types
 
-*Decisions recorded — framework lock-in avoided, provider-agnostic from day one.*
+### ✅ Services
+- [x] **Auth** (8081) — Register, login, JWT, OAuth (Google/Twitch/Discord via Goth), OTP verification, password reset, profile, rate limiting
+- [x] **Video** (8082) — Upload, presigned URLs, transcode to HLS/MP4, clip, thumbnail, presets
+- [x] **Chat** (8083) — WebSocket real-time, Redis pub/sub fan-out, history, timeout/ban, message persistence
+- [x] **Payment** (8084) — Paddle subscriptions, PayPal tips/payouts, USDC micro-tips, creator ledger, payout engine
+- [x] **Stream** (8085) — Stream CRUD, RTMP ingest management, simulcast config, MediaMTX webhooks, analytics, categories
+- [x] **Content** (8086) — Category CRUD, search (pg_trgm), trending, recommendations, content reporting
+- [x] **Notification** (8087) — In-app notifications, preferences, unread counts, mark read
+
+### ✅ Infrastructure
+- [x] `go.work` — Go workspace (pkg + all services)
+- [x] `Dockerfile` — Multi-stage scratch build per service (~8MB)
+- [x] `deploy/docker-compose.yaml` — Postgres + Redis + MediaMTX + 7 services + Nginx reverse proxy
+- [x] `deploy/nginx/default.conf` — Routing, WebSocket upgrade, HLS CORS
+- [x] `deploy/mtx/mediamtx.yml` — RTMP ingest, HLS, WebRTC, webhook hooks
+- [x] `deploy/scripts/init-db.sh` — Full schema (users, oauth, refresh tokens, videos, streams, simulcast, analytics, chat, subscriptions, transactions, ledger, payouts, categories, reports, notifications, prefs) + seed data
+- [x] `Makefile` — dev, db-up, build, test, fmt, vet, up, down, logs, ci
+- [x] `.github/workflows/ci.yaml` — Lint, test, build, Docker build on push/PR
+- [x] `ARCHITECTURE.md` — All decisions recorded (this file)
+- [x] `README.md` — Full docs: architecture, services, API overview, quick start, env vars
+
+### Remaining (Phase 2)
+- [ ] End-to-end integration tests
+- [ ] AI moderation service (local LLM + pgvector)
+- [ ] Creator dashboard with analytics
+- [ ] Admin panel for moderation
+- [ ] Mobile push notifications
+- [ ] Self-hosted transcoding farm
+- [ ] Edge caching configuration
+- [ ] Tenant/enterprise features
+
+*All core decisions baked in. Framework lock-in avoided. Provider-agnostic from day one.*

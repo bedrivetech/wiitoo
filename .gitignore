@@ -1,41 +1,35 @@
-# Binaries
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
+# Dependencies
+bin/
+vendor/
+
+# Build output
 *.out
 *.test
 *.test.exe
-*.test-*
-/tmp/
-
-# Go
-vendor/
-go.work
-go.work.sum
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
-.DS_Store
 
-# Environment
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
 .env
 .env.local
 .env.production
 
-# Build
-dist/
-build/
-/target/
-
 # Docker
-.docker/
+docker-compose.override.yml
 
-# sqlc generated
-services/*/sqlc/db/
-services/*/sqlc/models/
+# Go workspace
+go.work.sum
+
+# MediaMTX recordings
+recordings/
+
+# Temp
+tmp/

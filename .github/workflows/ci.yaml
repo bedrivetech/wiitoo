@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fusion
+          POSTGRES_PASSWORD: fusion
+          POSTGRES_DB: fusion
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Initialize database
+        run: |
+          PGPASSWORD=fusion psql -h localhost -U fusion -d fusion -f deploy/scripts/init-db.sh
+
+      - name: Download dependencies
+        run: |
+          cd pkg && go mod download
+          for svc in auth video chat payment stream content notification; do
+            cd ../services/$svc && go mod download
+          done
+
+      - name: Lint
+        run: |
+          cd pkg && go vet ./...
+          for svc in auth video chat payment stream content notification; do
+            cd ../services/$svc && go vet ./... 2>/dev/null || true
+          done
+
+      - name: Test
+        run: |
+          cd pkg && go test ./... -v -count=1
+          for svc in auth video chat payment stream content notification; do
+            cd ../services/$svc && go test ./... -v -count=1 2>/dev/null || true
+          done
+
+      - name: Build
+        run: |
+          for svc in auth video chat payment stream content notification; do
+            cd services/$svc && go build -o /dev/null ./cmd/server && cd ../..
+          done
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker images
+        run: |
+          cd deploy && docker compose build

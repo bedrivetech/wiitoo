@@ -1,0 +1,60 @@
+# MediaMTX configuration for Fusion Platform
+# RTMP + HLS + WebRTC media server
+
+rtmp: yes
+rtmpAddress: ":1935"
+rtmpEncryption: no
+rtmpServerKey: ""
+rtmpServerCert: ""
+
+hls: yes
+hlsAddress: ":8888"
+hlsEncryption: no
+hlsServerKey: ""
+hlsServerCert: ""
+hlsDirectory: "/recordings"
+hlsSegmentCount: 7
+hlsSegmentDuration: 2s
+hlsSegmentMaxSize: 100M
+hlsVariant: lowLatency
+hlsAlwaysRemux: yes
+
+webrtc: yes
+webrtcAddress: ":8889"
+webrtcEncryption: no
+webrtcServerKey: ""
+webrtcServerCert: ""
+webrtcIceServers:
+  - url: "stun:stun.l.google.com:19302"
+
+paths:
+  all:
+    source: publisher
+    sourceOnDemand: no
+    fallback: ""
+    publishUser: ""
+    publishPass: ""
+    publishIPs: []
+    readUser: ""
+    readPass: ""
+    readIPs: []
+    runOnInit: ""
+    runOnInitRestart: no
+    runOnConnect: "curl -X POST http://stream:8085/api/v1/stream/webhook/mediatx -H 'Content-Type: application/json' -d '{\"event\":\"connect\",\"remote_addr\":\"$t\"}'"
+    runOnDisconnect: "curl -X POST http://stream:8085/api/v1/stream/webhook/mediatx -H 'Content-Type: application/json' -d '{\"event\":\"disconnect\"}'"
+    runOnPublish: "curl -X POST http://stream:8085/api/v1/stream/webhook/mediatx -H 'Content-Type: application/json' -d '{\"event\":\"publish\",\"key\":\"%path\"}'"
+    runOnPublishDone: "curl -X POST http://stream:8085/api/v1/stream/webhook/mediatx -H 'Content-Type: application/json' -d '{\"event\":\"publish_done\",\"key\":\"%path\"}'"
+    runOnRead: ""
+    runOnUnpublish: ""
+    runOnRecordSegmentCreate: ""
+
+api: yes
+apiAddress: ":9997"
+metrics: no
+pprof: no
+
+record: yes
+recordPath: "/recordings/%path/%Y-%m-%d_%H-%M-%S-%f"
+recordFormat: "fmp4"
+recordSegmentDuration: 60m
+recordDeleteAfter: 720h

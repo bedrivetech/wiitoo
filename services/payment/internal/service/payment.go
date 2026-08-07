@@ -1,0 +1,289 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+	ppkg "github.com/fusion-platform/pkg/payment"
+	pprovider "github.com/fusion-platform/pkg/payment/provider"
+	"github.com/fusion-platform/payment/internal/config"
+	"github.com/fusion-platform/payment/internal/model"
+)
+
+type PaymentService struct {
+	cfg          *svcconfig.Config
+	pool         *pgxpool.Pool
+	paddle       ppkg.Provider
+	paypal       *pprovider.PayPalProvider
+	crypto       ppkg.Provider
+}
+
+func NewPaymentService(cfg *svcconfig.Config, pool *pgxpool.Pool) *PaymentService {
+	var paddle ppkg.Provider
+	if cfg.PaddleAPIKey != "" {
+		paddle = pprovider.NewPaddleProvider(cfg.PaddleAPIKey, cfg.PaddleWebhookKey, cfg.PaddleEnv)
+	}
+
+	var paypalPay *pprovider.PayPalProvider
+	if cfg.PayPalClientID != "" {
+		paypalPay = pprovider.NewPayPalProvider(cfg.PayPalClientID, cfg.PayPalSecret, cfg.PayPalEnv)
+	}
+
+	var crypto ppkg.Provider
+	if cfg.SolanaWallet != "" {
+		crypto = pprovider.NewCryptoProvider(pprovider.CryptoConfig{
+			WalletAddress: cfg.SolanaWallet,
+			SolanaRPC:     cfg.SolanaRPC,
+			Network:       "mainnet-beta",
+		})
+	}
+
+	return &PaymentService{
+		cfg:    cfg,
+		pool:   pool,
+		paddle: paddle,
+		paypal: paypalPay,
+		crypto: crypto,
+	}
+}
+
+func (s *PaymentService) CreateCheckout(ctx context.Context, userID string, amount float64, currency, description string) (*ppkg.CheckoutResponse, error) {
+	// Use Paddle for fiat checkout
+	if s.paddle != nil {
+		return s.paddle.CreateCheckout(ctx, ppkg.CheckoutRequest{
+			Amount:      amount,
+			Currency:    currency,
+			Description: description,
+			Metadata:    map[string]string{"user_id": userID},
+		})
+	}
+	return nil, fmt.Errorf("no payment provider configured")
+}
+
+func (s *PaymentService) CreateSubscription(ctx context.Context, userID string, planID string, provider string) (*ppkg.SubscriptionResponse, error) {
+	switch provider {
+	case "paddle":
+		if s.paddle != nil {
+			return s.paddle.CreateSubscription(ctx, ppkg.SubscriptionRequest{
+				PlanID:   planID,
+				Metadata: map[string]string{"user_id": userID},
+			})
+		}
+	case "paypal":
+		if s.paypal != nil {
+			return s.paypal.CreateSubscription(ctx, ppkg.SubscriptionRequest{
+				PlanID:   planID,
+				Metadata: map[string]string{"user_id": userID},
+			})
+		}
+	}
+	return nil, fmt.Errorf("subscription provider %s not configured", provider)
+}
+
+func (s *PaymentService) CancelSubscription(ctx context.Context, subscriptionID string) error {
+	sub, err := s.getSubscription(ctx, subscriptionID)
+	if err != nil {
+		return err
+	}
+	switch sub.Provider {
+	case "paddle":
+		if s.paddle != nil {
+			return s.paddle.CancelSubscription(ctx, sub.ProviderSubID)
+		}
+	case "paypal":
+		if s.paypal != nil {
+			return s.paypal.CancelSubscription(ctx, sub.ProviderSubID)
+		}
+	}
+	return fmt.Errorf("provider not found")
+}
+
+func (s *PaymentService) SendTip(ctx context.Context, fromUserID, toCreatorID string, amount float64, currency, provider string) (*model.Transaction, error) {
+	txnID := uuid.New().String()
+
+	_, err := s.pool.Exec(ctx,
+		`INSERT INTO transactions (id, user_id, type, provider, amount, currency, fee, net_amount, status, description, created_at)
+		 VALUES ($1, $2, 'tip', $3, $4, $5, 0, $4, 'completed', $6, NOW())`,
+		txnID, fromUserID, provider, amount, currency, fmt.Sprintf("Tip to %s", toCreatorID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to record tip: %w", err)
+	}
+
+	// Credit the creator's ledger
+	gross := amount
+	fee := gross * (s.cfg.PlatformFeePct / 100.0)
+	net := gross - fee
+
+	_, err = s.pool.Exec(ctx,
+		`INSERT INTO creator_ledger (creator_id, balance, lifetime_earnings, pending_payout, updated_at)
+		 VALUES ($1, $2, $2, 0, NOW())
+		 ON CONFLICT (creator_id) DO UPDATE SET
+		   balance = creator_ledger.balance + $2,
+		   lifetime_earnings = creator_ledger.lifetime_earnings + $2,
+		   updated_at = NOW()`,
+		toCreatorID, net)
+	if err != nil {
+		slog.Error("failed to credit creator ledger", "error", err)
+	}
+
+	return &model.Transaction{
+		ID:     txnID,
+		UserID: fromUserID,
+		Type:   "tip",
+		Amount: amount,
+		Currency: currency,
+		Status: "completed",
+	}, nil
+}
+
+func (s *PaymentService) HandlePaddleWebhook(ctx context.Context, payload []byte, signature string) error {
+	event, err := s.paddle.ProcessWebhook(ctx, payload, signature)
+	if err != nil {
+		return err
+	}
+	return s.handleWebhookEvent(ctx, event)
+}
+
+func (s *PaymentService) HandlePayPalWebhook(ctx context.Context, payload []byte, signature string) error {
+	event, err := s.paypal.ProcessWebhook(ctx, payload, signature)
+	if err != nil {
+		return err
+	}
+	return s.handleWebhookEvent(ctx, event)
+}
+
+func (s *PaymentService) HandleCryptoWebhook(ctx context.Context, payload []byte, signature string) error {
+	event, err := s.crypto.ProcessWebhook(ctx, payload, signature)
+	if err != nil {
+		return err
+	}
+	return s.handleWebhookEvent(ctx, event)
+}
+
+func (s *PaymentService) handleWebhookEvent(ctx context.Context, event *ppkg.WebhookEvent) error {
+	switch event.EventType {
+	case "transaction.completed", "payment.succeeded":
+		slog.Info("payment succeeded", "txn", event.TransactionID, "amount", event.Amount)
+
+	case "subscription.created":
+		slog.Info("subscription created", "sub", event.SubscriptionID)
+
+	case "subscription.cancelled":
+		slog.Info("subscription cancelled", "sub", event.SubscriptionID)
+	}
+	return nil
+}
+
+func (s *PaymentService) GetBalance(ctx context.Context, creatorID string) (float64, error) {
+	var balance float64
+	err := s.pool.QueryRow(ctx,
+		`SELECT balance FROM creator_ledger WHERE creator_id = $1`, creatorID).Scan(&balance)
+	if err != nil {
+		return 0, nil // New creator has no entries yet
+	}
+	return balance, nil
+}
+
+func (s *PaymentService) GetTransactions(ctx context.Context, creatorID string, limit, offset int) ([]model.Transaction, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, user_id, type, provider, amount, currency, fee, net_amount, status, description, created_at
+		 FROM transactions WHERE user_id = $1 OR description LIKE $2
+		 ORDER BY created_at DESC LIMIT $3 OFFSET $4`,
+		creatorID, fmt.Sprintf("%%to %s%%", creatorID), limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var txns []model.Transaction
+	for rows.Next() {
+		var t model.Transaction
+		rows.Scan(&t.ID, &t.UserID, &t.Type, &t.Provider, &t.Amount, &t.Currency, &t.Fee, &t.NetAmount, &t.Status, &t.Description, &t.CreatedAt)
+		txns = append(txns, t)
+	}
+	return txns, nil
+}
+
+func (s *PaymentService) ProcessPayout(ctx context.Context, creatorID string) (*model.Payout, error) {
+	balance, err := s.GetBalance(ctx, creatorID)
+	if err != nil {
+		return nil, err
+	}
+	if balance < s.cfg.PayoutThreshold {
+		return nil, fmt.Errorf("balance %.2f below payout threshold %.2f", balance, s.cfg.PayoutThreshold)
+	}
+
+	// Deduct from ledger
+	_, err = s.pool.Exec(ctx,
+		`UPDATE creator_ledger SET balance = 0, pending_payout = balance, updated_at = NOW() WHERE creator_id = $1`,
+		creatorID)
+	if err != nil {
+		return nil, err
+	}
+
+	payout := &model.Payout{
+		ID:        uuid.New().String(),
+		CreatorID: creatorID,
+		Amount:    balance,
+		Fee:       0,
+		NetAmount: balance,
+		Method:    "paypal",
+		Status:    "pending",
+		PeriodStart: time.Now().Add(-30 * 24 * time.Hour),
+		PeriodEnd:   time.Now(),
+		CreatedAt:   time.Now(),
+	}
+
+	_, err = s.pool.Exec(ctx,
+		`INSERT INTO payouts (id, creator_id, amount, fee, net_amount, method, status, period_start, period_end, created_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		payout.ID, payout.CreatorID, payout.Amount, payout.Fee, payout.NetAmount,
+		payout.Method, payout.Status, payout.PeriodStart, payout.PeriodEnd, payout.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	// Send payout via PayPal
+	if s.paypal != nil {
+		resp, err := s.paypal.SendPayout(ctx, ppkg.PayoutRequest{
+			RecipientID: creatorID,
+			Amount:      balance,
+			Currency:    "USD",
+			Metadata:    map[string]string{"payout_id": payout.ID},
+		})
+		if err != nil {
+			slog.Error("payout failed", "error", err)
+			payout.Status = "failed"
+		} else {
+			payout.Status = resp.Status
+			payout.ProviderRef = resp.PayoutID
+			now := time.Now()
+			payout.ProcessedAt = &now
+		}
+	} else {
+		payout.Status = "pending_manual"
+	}
+
+	return payout, nil
+}
+
+func (s *PaymentService) ListPlans() []ppkg.Plan {
+	return []ppkg.Plan{ppkg.PlanFusion, ppkg.PlanFusionPlus, ppkg.PlanCreator}
+}
+
+func (s *PaymentService) getSubscription(ctx context.Context, id string) (*model.Subscription, error) {
+	sub := &model.Subscription{}
+	err := s.pool.QueryRow(ctx,
+		`SELECT id, user_id, plan_id, provider, provider_sub_id, status, current_period_start, current_period_end, canceled_at, created_at
+		 FROM subscriptions WHERE id = $1`, id).Scan(
+		&sub.ID, &sub.UserID, &sub.PlanID, &sub.Provider, &sub.ProviderSubID, &sub.Status,
+		&sub.CurrentPeriodStart, &sub.CurrentPeriodEnd, &sub.CanceledAt, &sub.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("subscription not found: %w", err)
+	}
+	return sub, nil
+}

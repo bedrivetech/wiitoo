@@ -1,0 +1,12 @@
+go 1.23
+
+use (
+	./pkg
+	./services/auth
+	./services/video
+	./services/chat
+	./services/payment
+	./services/stream
+	./services/content
+	./services/notification
+)
