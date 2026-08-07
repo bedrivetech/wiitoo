@@ -22,7 +22,6 @@ import {
 import { useState } from "react";
 
 const { Title } = Typography;
-const { show } = useNavigation();
 
 const statusColors: Record<string, string> = {
   pending: "gold",
@@ -39,6 +38,7 @@ const reportTypeColors: Record<string, string> = {
 };
 
 export default function ReportsList() {
+  const { show } = useNavigation();
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
   const permanentFilters = [];

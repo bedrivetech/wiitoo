@@ -21,7 +21,8 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-router": "^6.30.4",
-    "react-router-dom": "^7.18.2"
+    "react-router-dom": "^7.18.2",
+    "recharts": "^2.15.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

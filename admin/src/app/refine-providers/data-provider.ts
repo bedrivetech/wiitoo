@@ -54,6 +54,10 @@ function getResourceUrl(resource: string): string {
     payouts: `${API_BASE_URL}/api/v1/admin/payouts`,
     subscriptions: `${API_BASE_URL}/api/v1/admin/subscriptions`,
     templates: `${API_BASE_URL}/api/v1/admin/templates`,
+    email: `${API_BASE_URL}/api/v1/admin/email`,
+    "email-providers": `${API_BASE_URL}/api/v1/admin/email/providers`,
+    "email-templates": `${API_BASE_URL}/api/v1/admin/email/templates`,
+    "email-log": `${API_BASE_URL}/api/v1/admin/email/log`,
   };
 
   return resourceMap[resource] || `${API_BASE_URL}/api/v1/admin/${resource}`;

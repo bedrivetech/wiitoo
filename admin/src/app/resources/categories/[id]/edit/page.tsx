@@ -32,16 +32,16 @@ export default function CategoriesEditPage() {
     id,
   });
 
-  const { data: categoriesData } = useList({
+  const { query: _cQ, result: categoriesResult } = useList({
     resource: "categories",
     pagination: { currentPage: 1, pageSize: 200 },
   });
+  const categoriesData = categoriesResult?.data || [];
 
   const { mutate: update, mutation: updateMutation } = useUpdate();
 
   const handleFinish = (values: any) => {
     const payload = { ...values };
-    // If parent_category_id is undefined/null, set to empty
     if (payload.parent_category_id === undefined || payload.parent_category_id === null) {
       delete payload.parent_category_id;
     }
@@ -63,16 +63,15 @@ export default function CategoriesEditPage() {
     );
   };
 
-  const c = category as any;
+  const c = (category?.data || {}) as any;
   const isLoading = query.isLoading;
-  const allCats = (categoriesData?.data || []) as any[];
+  const allCats = categoriesData || [];
   const parentOptions = allCats
     ?.filter((cat: any) => cat.id !== id)
     ?.map((cat: any) => ({
       label: cat.name,
       value: cat.id,
-    })) || [];
-  parentOptions.unshift({ label: "(No parent)", value: undefined });
+    }));
 
   if (isLoading) {
     return (
@@ -114,7 +113,7 @@ export default function CategoriesEditPage() {
           onFinish={handleFinish}
           style={{ maxWidth: 500 }}
         >
-          <Divider orientation="left">Details</Divider>
+          <Divider>Details</Divider>
 
           <Form.Item
             label="Name"
@@ -132,7 +131,7 @@ export default function CategoriesEditPage() {
             <Input placeholder="https://example.com/thumbnail.jpg" />
           </Form.Item>
 
-          <Divider orientation="left">Organization</Divider>
+          <Divider>Organization</Divider>
 
           <Form.Item label="Sort Order" name="sort_order">
             <InputNumber

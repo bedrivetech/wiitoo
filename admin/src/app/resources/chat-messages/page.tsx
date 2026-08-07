@@ -28,9 +28,9 @@ import {
 import { useState } from "react";
 
 const { Title } = Typography;
-const { show } = useNavigation();
 
 export default function ChatMessagesList() {
+  const { show } = useNavigation();
   const [search, setSearch] = useState("");
   const [banModalOpen, setBanModalOpen] = useState(false);
   const [banUserId, setBanUserId] = useState<string>("");

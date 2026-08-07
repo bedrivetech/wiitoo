@@ -130,7 +130,7 @@ export default function UsersEditPage() {
           onFinish={handleFinish}
           style={{ maxWidth: 600 }}
         >
-          <Divider orientation="left">Basic Information</Divider>
+          <Divider >Basic Information</Divider>
 
           <Form.Item
             label="Username"
@@ -170,7 +170,7 @@ export default function UsersEditPage() {
             />
           </Form.Item>
 
-          <Divider orientation="left">Suspension</Divider>
+          <Divider >Suspension</Divider>
 
           <Form.Item label="Suspended" name="suspended" valuePropName="checked">
             <Switch />
@@ -188,7 +188,7 @@ export default function UsersEditPage() {
             />
           </Form.Item>
 
-          <Divider orientation="left">Verification</Divider>
+          <Divider >Verification</Divider>
 
           <Form.Item label="Creator Verified" name="creator_verified" valuePropName="checked">
             <Switch />
