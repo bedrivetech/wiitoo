@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { Creator } from '@/lib/types';
+import { ShareModal } from './share-modal';
 
 interface InfoRowProps {
   creator: Creator;
   views: number;
   likes: number;
+  dislikes?: number;
   publishedAt: string;
 }
 
@@ -14,7 +16,6 @@ function timeAgo(dateStr: string): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const seconds = Math.floor((now - then) / 1000);
-
   if (seconds < 60) return 'just now';
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -36,31 +37,49 @@ function formatCount(n: number): string {
   return n.toLocaleString();
 }
 
-export function InfoRow({ creator, views, likes, publishedAt }: InfoRowProps) {
+export function InfoRow({ creator, views, likes, dislikes = 0, publishedAt }: InfoRowProps) {
   const [isFollowing, setIsFollowing] = useState(creator.following);
-  // Would come from subscription state
+  const [likeState, setLikeState] = useState<'none' | 'like' | 'dislike'>('none');
+  const [likeCount, setLikeCount] = useState(likes);
+  const [dislikeCount] = useState(dislikes);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
+
   const isSubscribed = creator.subscribed;
+
+  const handleLike = useCallback(() => {
+    if (likeState === 'like') {
+      setLikeState('none');
+      setLikeCount((c) => c - 1);
+    } else if (likeState === 'dislike') {
+      setLikeState('like');
+      setLikeCount((c) => c + 2);
+    } else {
+      setLikeState('like');
+      setLikeCount((c) => c + 1);
+    }
+  }, [likeState]);
+
+  const handleDislike = useCallback(() => {
+    if (likeState === 'dislike') {
+      setLikeState('none');
+    } else if (likeState === 'like') {
+      setLikeState('dislike');
+      setLikeCount((c) => c - 1);
+    } else {
+      setLikeState('dislike');
+    }
+  }, [likeState]);
 
   return (
     <div className="px-4 md:px-0 pb-3 md:pb-4">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         {/* Creator info */}
         <div className="flex items-center gap-3 min-w-0">
-          {/* Avatar */}
           <div className="relative shrink-0">
-            <div
-              className={`w-10 h-10 rounded-full overflow-hidden ${
-                creator.isExclusive
-                  ? 'ring-ember-subtle'
-                  : ''
-              }`}
-            >
+            <div className={`w-10 h-10 rounded-full overflow-hidden ${creator.isExclusive ? 'ring-ember-subtle' : ''}`}>
               {creator.avatarUrl ? (
-                <img
-                  src={creator.avatarUrl}
-                  alt={creator.displayName}
-                  className="w-full h-full object-cover"
-                />
+                <img src={creator.avatarUrl} alt={creator.displayName} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-brand-600/30 flex items-center justify-center">
                   <span className="text-sm font-semibold text-brand-300">
@@ -78,7 +97,6 @@ export function InfoRow({ creator, views, likes, publishedAt }: InfoRowProps) {
             )}
           </div>
 
-          {/* Name + handle */}
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <button className="text-text-primary font-semibold text-small hover:text-brand-400 transition-colors truncate">
@@ -139,23 +157,53 @@ export function InfoRow({ creator, views, likes, publishedAt }: InfoRowProps) {
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="flex items-center gap-3 mt-3 text-text-muted text-tiny">
+      {/* Stats row — now includes toggleable like/dislike */}
+      <div className="flex items-center gap-2 mt-3 text-text-muted text-tiny flex-wrap">
         <span>{formatCount(views)} views</span>
-        <span className="w-1 h-1 rounded-full bg-text-muted/30" />
+        <span className="w-1 h-1 rounded-full bg-text-muted/30 shrink-0" />
         <span>{timeAgo(publishedAt)}</span>
-        <span className="w-1 h-1 rounded-full bg-text-muted/30" />
-        <button className="flex items-center gap-1 hover:text-text-secondary transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <span className="w-1 h-1 rounded-full bg-text-muted/30 shrink-0" />
+
+        {/* Like button */}
+        <button
+          onClick={handleLike}
+          className={`flex items-center gap-1 px-2 py-1 rounded-md transition-all ${
+            likeState === 'like'
+              ? 'text-brand-400 bg-brand-600/10'
+              : 'hover:text-text-secondary hover:bg-bg-hover'
+          }`}
+          title="Like"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={likeState === 'like' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform duration-150">
             <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z" />
           </svg>
-          {formatCount(likes)}
+          {likeCount > 0 && <span className="tabular-nums">{formatCount(likeCount)}</span>}
+        </button>
+
+        {/* Dislike button */}
+        <button
+          onClick={handleDislike}
+          className={`flex items-center px-2 py-1 rounded-md transition-all ${
+            likeState === 'dislike'
+              ? 'text-amber-400 bg-amber-500/10'
+              : 'hover:text-text-secondary hover:bg-bg-hover'
+          }`}
+          title="Dislike"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={likeState === 'dislike' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="scale-y-[-1] transition-transform duration-150">
+            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z" />
+          </svg>
+          {dislikeCount > 0 && <span className="tabular-nums ml-1">{formatCount(dislikeCount)}</span>}
         </button>
       </div>
 
       {/* Utility actions row */}
       <div className="flex items-center gap-1 mt-2">
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-tiny text-text-muted hover:text-text-secondary hover:bg-bg-hover transition-all">
+        {/* Share — opens modal */}
+        <button
+          onClick={() => setShareOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-tiny text-text-muted hover:text-text-secondary hover:bg-bg-hover transition-all"
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="18" cy="5" r="3" />
             <circle cx="6" cy="12" r="3" />
@@ -165,6 +213,7 @@ export function InfoRow({ creator, views, likes, publishedAt }: InfoRowProps) {
           </svg>
           Share
         </button>
+
         <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-tiny text-text-muted hover:text-text-secondary hover:bg-bg-hover transition-all">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15.75 15.75l-2.51-2.51" />
@@ -176,12 +225,22 @@ export function InfoRow({ creator, views, likes, publishedAt }: InfoRowProps) {
           </svg>
           Clip
         </button>
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-tiny text-text-muted hover:text-text-secondary hover:bg-bg-hover transition-all">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+
+        {/* Save — toggles */}
+        <button
+          onClick={() => setSaved(!saved)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-tiny transition-all ${
+            saved
+              ? 'text-brand-400 bg-brand-600/10'
+              : 'text-text-muted hover:text-text-secondary hover:bg-bg-hover'
+          }`}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
           </svg>
-          Save
+          {saved ? 'Saved' : 'Save'}
         </button>
+
         <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-tiny text-text-muted hover:text-text-secondary hover:bg-bg-hover transition-all">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="1" />
@@ -190,6 +249,9 @@ export function InfoRow({ creator, views, likes, publishedAt }: InfoRowProps) {
           </svg>
         </button>
       </div>
+
+      {/* Share modal */}
+      <ShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} title={typeof window !== 'undefined' ? document.title : ''} />
     </div>
   );
 }

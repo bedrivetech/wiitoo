@@ -8,7 +8,10 @@ import { InfoRow } from '@/components/watch/info-row';
 import { Description } from '@/components/watch/description';
 import { CommentsSection } from '@/components/watch/comments-section';
 import { ChatDrawer } from '@/components/watch/chat-drawer';
+import ContentCard from '@/components/browse/content-card';
 import { useUiStore } from '@/lib/store';
+import { videos as allMockVideos } from '@/lib/mock-data';
+import { WatchPageSkeleton } from '@/components/ui/skeleton';
 import type { WatchPageData, ChatMessage } from '@/lib/types';
 
 /* ── Mock data ── */
@@ -151,6 +154,9 @@ const INLINE_CHAT: ChatMessage[] = [
   { id: 'i8', username: 'big_spender', displayName: 'Big Spender', text: 'deserves way more viewers honestly', isSuperchat: true, superchatAmount: 15, timestamp: Date.now() - 1000 },
 ];
 
+/* ── Related videos (mock) ── */
+const relatedVideos = allMockVideos.filter((v) => v.id !== MOCK_DATA.video.id).slice(0, 8);
+
 /* ── Inline Chat Drawer ── */
 function ChatDrawerInline({ onClose }: { onClose: () => void }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -169,7 +175,6 @@ function ChatDrawerInline({ onClose }: { onClose: () => void }) {
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className="flex flex-col h-full"
     >
-      {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-bg-border shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-small font-semibold text-text-primary">Live Chat</span>
@@ -178,26 +183,16 @@ function ChatDrawerInline({ onClose }: { onClose: () => void }) {
             <span className="font-mono">432</span>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-bg-hover transition-all"
-          aria-label="Close chat"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+        <button onClick={onClose} className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-bg-hover transition-all" aria-label="Close chat">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
         </button>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
         {INLINE_CHAT.map((msg, i) => (
           <div key={msg.id} className={`chat-message-enter ${msg.isSuperchat ? 'gradient-ember-horizontal rounded-lg px-2 -mx-2 superchat-enter' : ''}`} style={{ animationDelay: `${i * 0.03}s` }}>
             <div className="flex items-start gap-1.5">
-              <span className={`shrink-0 text-tiny font-semibold ${
-                msg.badge === 'exclusive' ? 'text-ember-400' :
-                msg.badge === 'sub' ? 'text-brand-400' : 'text-text-muted'
-              }`}>
+              <span className={`shrink-0 text-tiny font-semibold ${msg.badge === 'exclusive' ? 'text-ember-400' : msg.badge === 'sub' ? 'text-brand-400' : 'text-text-muted'}`}>
                 {msg.displayName}
               </span>
               {msg.isSuperchat && msg.superchatAmount && (
@@ -210,29 +205,96 @@ function ChatDrawerInline({ onClose }: { onClose: () => void }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div className="p-3 border-t border-bg-border shrink-0">
         <div className="flex items-center gap-2 bg-bg-raised rounded-lg px-3 py-2 border border-bg-border focus-within:border-brand-600/30 transition-colors">
           <input type="text" placeholder="Send a message..." className="flex-1 bg-transparent text-small text-text-primary placeholder-text-muted focus:outline-none" />
           <button className="p-1 text-text-muted hover:text-text-secondary transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="12 2 2 7 12 12 22 7 12 2" />
-              <polyline points="2 17 12 22 22 17" />
-              <polyline points="2 12 12 17 22 12" />
-            </svg>
-          </button>
-          <button className="p-1 text-text-muted hover:text-text-secondary transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="12" y1="18" x2="12" y2="12" />
-              <line x1="9" y1="15" x2="15" y2="15" />
-            </svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>
           </button>
         </div>
       </div>
     </motion.div>
   );
+}
+
+/* ── Related videos sidebar (desktop) ── */
+function RelatedSidebar() {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-base font-semibold text-text-primary px-1">Related videos</h3>
+      {relatedVideos.map((v) => (
+        <div key={v.id} className="flex gap-2">
+          <div className="w-[168px] shrink-0">
+            <ContentCard video={v} size="standard" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Keyboard shortcut handler ── */
+function useVideoKeyboardShortcuts(togglePlay: () => void, seekBy: (s: number) => void, toggleFullscreen: () => void, toggleMute: () => void) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
+      switch (e.key.toLowerCase()) {
+        case 'k':
+        case ' ':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'f':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case 'm':
+          e.preventDefault();
+          toggleMute();
+          break;
+        case 'j':
+        case 'arrowleft':
+          e.preventDefault();
+          seekBy(-10);
+          break;
+        case 'l':
+        case 'arrowright':
+          e.preventDefault();
+          seekBy(10);
+          break;
+        case ',':
+          e.preventDefault();
+          seekBy(-1); // Slow rewind
+          break;
+        case '.':
+          e.preventDefault();
+          seekBy(1); // Slow forward
+          break;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          e.preventDefault();
+          // Seek to 0%, 10%, 20%... of the video
+          const pct = parseInt(e.key) / 10;
+          const vid = document.querySelector('video');
+          if (vid && vid.duration) vid.currentTime = pct * vid.duration;
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [togglePlay, seekBy, toggleFullscreen, toggleMute]);
 }
 
 /* ==================================================================
@@ -243,29 +305,80 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
   const comments = MOCK_DATA.comments;
   const isChatOpen = useUiStore((s) => s.isChatOpen);
   const closeChat = useUiStore((s) => s.closeChat);
+  const [loading] = useState(false); // Will be true when real API loads
 
   /* ── Mini-player state ── */
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
-  const [playerBottom, setPlayerBottom] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
       if (!playerContainerRef.current) return;
       const rect = playerContainerRef.current.getBoundingClientRect();
-      // Player is off-screen when its bottom goes above viewport top
-      const isOff = rect.bottom < 0;
-      setShowMiniPlayer(isOff);
-      setPlayerBottom(rect.bottom);
+      setShowMiniPlayer(rect.bottom < 0);
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSeekTo = useCallback((seconds: number) => {
-    console.log('Seek to:', seconds);
+  /* ── Player ref for keyboard shortcuts ── */
+  const playerApiRef = useRef<{
+    togglePlay: () => void;
+    seekBy: (s: number, pct?: boolean) => void;
+    toggleFullscreen: () => void;
+    toggleMute: () => void;
+  }>({
+    togglePlay: () => {},
+    seekBy: () => {},
+    toggleFullscreen: () => {},
+    toggleMute: () => {},
+  });
+
+  // We expose these via the player component's parent interaction.
+  // For now, tap into the player controls by simulating key events.
+  // Actually, we can use the video.js player ref from WiitooPlayer.
+  // Since WiitooPlayer manages its own refs internally, we need to
+  // dispatch events on the video element as fallback.
+  const togglePlay = useCallback(() => {
+    const vid = document.querySelector('video');
+    if (!vid) return;
+    if (vid.paused) vid.play();
+    else vid.pause();
   }, []);
+
+  const seekBy = useCallback((seconds: number, isPercentage?: boolean) => {
+    const vid = document.querySelector('video');
+    if (!vid || !vid.duration) return;
+    if (isPercentage) {
+      vid.currentTime = (seconds / 100) * vid.duration;
+    } else {
+      vid.currentTime = Math.max(0, Math.min(vid.duration, vid.currentTime + seconds));
+    }
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    const container = document.querySelector('.wiitoo-player-skin')?.closest('.group') as HTMLElement;
+    if (!container) return;
+    if (document.fullscreenElement) document.exitFullscreen();
+    else container.requestFullscreen();
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    const vid = document.querySelector('video');
+    if (!vid) return;
+    vid.muted = !vid.muted;
+  }, []);
+
+  useVideoKeyboardShortcuts(togglePlay, seekBy, toggleFullscreen, toggleMute);
+
+  const handleSeekTo = useCallback((seconds: number) => {
+    const vid = document.querySelector('video');
+    if (vid && vid.duration) vid.currentTime = seconds;
+  }, []);
+
+  if (loading) {
+    return <WatchPageSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-bg-base">
@@ -276,68 +389,84 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
         </a>
         <div className="flex-1 flex justify-center max-w-xl mx-auto">
           <div className="w-full max-w-md flex items-center bg-bg-raised rounded-lg px-3 py-1.5 border border-bg-border">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted shrink-0">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
             <input type="text" placeholder="Search" className="flex-1 bg-transparent text-small text-text-primary placeholder-text-muted px-2 py-0.5 focus:outline-none" />
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <a href="/auth" className="px-3 py-1.5 text-tiny font-medium text-text-primary bg-bg-raised rounded-lg border border-bg-border hover:bg-bg-hover transition-colors">
-            Log in
-          </a>
-          <a href="/auth" className="px-3 py-1.5 text-tiny font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition-colors">
-            Sign up
-          </a>
+          <a href="/auth" className="px-3 py-1.5 text-tiny font-medium text-text-primary bg-bg-raised rounded-lg border border-bg-border hover:bg-bg-hover transition-colors">Log in</a>
+          <a href="/auth" className="px-3 py-1.5 text-tiny font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition-colors">Sign up</a>
         </div>
       </header>
 
-      {/* ── Player + Content layout ── */}
+      {/* ── Keyboard shortcut hint (dismissable) ── */}
+      <div className="hidden md:flex items-center justify-center gap-1 py-1 text-tiny text-text-muted/50 bg-bg-base border-b border-bg-border/30">
+        <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">K</kbd> play/pause ·
+        <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">J</kbd> <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">L</kbd> seek ·
+        <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">F</kbd> fullscreen ·
+        <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">M</kbd> mute ·
+        <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">0-9</kbd> seek %
+      </div>
+
+      {/* ── Player + Related sidebar layout ── */}
       <main className="mx-auto max-w-[1360px]">
-        {/* Player area */}
-        <div ref={playerContainerRef} className="relative">
-          <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
-            <div className="px-0 md:px-6 pt-0 md:pt-6">
-              <WiitooPlayer
-                src={video.hlsUrl}
-                poster={video.posterUrl}
-                isLive={video.isLive}
-                title={video.title}
-                liveViewers={video.liveViewers}
-              />
+        <div className="flex gap-6">
+          {/* Main content */}
+          <div className="flex-1 min-w-0">
+            {/* Player area */}
+            <div ref={playerContainerRef} className="relative">
+              <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
+                <div className="px-0 md:px-6 pt-0 md:pt-6">
+                  <WiitooPlayer
+                    src={video.hlsUrl}
+                    poster={video.posterUrl}
+                    isLive={video.isLive}
+                    title={video.title}
+                    liveViewers={video.liveViewers}
+                  />
+                </div>
+              </div>
+
+              {/* Desktop inline chat */}
+              <div className="hidden md:block absolute right-0 top-0 h-full">
+                <AnimatePresence>
+                  {isChatOpen && (
+                    <div className="w-[360px] h-full chat-panel rounded-xl overflow-hidden border border-bg-border">
+                      <ChatDrawerInline onClose={closeChat} />
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Content below player */}
+            <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
+              <div className={showMiniPlayer ? 'opacity-30 pointer-events-none select-none' : ''}>
+                <TitleRow title={video.title} isLive={video.isLive} liveViewers={video.liveViewers} />
+                <InfoRow
+                  creator={video.creator}
+                  views={video.views}
+                  likes={video.likes}
+                  publishedAt={video.publishedAt}
+                />
+                <Description text={video.description} />
+                <CommentsSection
+                  comments={comments}
+                  totalComments={comments.length + 47}
+                  onSeekTo={handleSeekTo}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Desktop inline chat (directly next to player) */}
-          <div className="hidden md:block absolute right-0 top-0 h-full">
-            <AnimatePresence>
-              {isChatOpen && (
-                <div className="w-[360px] h-full chat-panel rounded-xl overflow-hidden border border-bg-border">
-                  <ChatDrawerInline onClose={closeChat} />
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Content below player */}
-        <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
-          <div className={showMiniPlayer ? 'opacity-30 pointer-events-none select-none' : ''}>
-            <TitleRow title={video.title} isLive={video.isLive} liveViewers={video.liveViewers} />
-            <InfoRow
-              creator={video.creator}
-              views={video.views}
-              likes={video.likes}
-              publishedAt={video.publishedAt}
-            />
-            <Description text={video.description} />
-            <CommentsSection
-              comments={comments}
-              totalComments={comments.length + 47}
-              onSeekTo={handleSeekTo}
-            />
-          </div>
+          {/* Related videos sidebar (desktop, hidden when chat is open) */}
+          {!isChatOpen && (
+            <div className="hidden xl:block w-[360px] shrink-0 pt-6 pr-6">
+              <RelatedSidebar />
+            </div>
+          )}
         </div>
       </main>
 
@@ -360,7 +489,6 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
                 liveViewers={video.liveViewers}
               />
             </div>
-            {/* Mini-player drag handle */}
             <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
               <div className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5">
                 <span className="text-white text-[10px] font-medium truncate block max-w-[200px]">
@@ -372,9 +500,7 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
                 className="bg-black/60 backdrop-blur-sm rounded-md p-1 hover:bg-black/80 transition-colors"
                 aria-label="Go to player"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-                  <path d="M19 15l-7-7-7 7" stroke="white" strokeWidth="2" fill="none" />
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M19 15l-7-7-7 7" /></svg>
               </button>
             </div>
           </motion.div>

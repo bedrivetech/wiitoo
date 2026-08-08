@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useRef } from 'react';
 import type { VideoData } from '@/lib/types';
 import { useUiStore } from '@/lib/store';
 
@@ -34,16 +35,8 @@ function timeAgo(dateStr: string): string {
 
 /* ── Thumbnail placeholder ── */
 
-function ThumbnailPlaceholder({
-  title,
-  isLive,
-}: {
-  title: string;
-  isLive: boolean;
-}) {
-  // deterministic color from title
-  const hue =
-    title.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
+function ThumbnailPlaceholder({ title, isLive }: { title: string; isLive: boolean }) {
+  const hue = title.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
   return (
     <div
       className="w-full aspect-video rounded-lg flex items-center justify-center overflow-hidden"
@@ -79,31 +72,37 @@ interface ContentCardProps {
 
 /* ── Component ── */
 
-export default function ContentCard({
-  video,
-  size = 'standard',
-}: ContentCardProps) {
+export default function ContentCard({ video, size = 'standard' }: ContentCardProps) {
+  const [hoverIntensity, setHoverIntensity] = useState(0);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isExclusive = video.creator.isExclusive;
   const isLive = video.isLive;
 
+  const handleMouseEnter = () => {
+    // Delay preview effect slightly to avoid flash on quick mouse passes
+    hoverTimer.current = setTimeout(() => setHoverIntensity(1), 300);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    setHoverIntensity(0);
+  };
+
   return (
     <Link
-      href={
-        isLive
-          ? `/watch/${video.id}?live=1`
-          : `/watch/${video.id}`
-      }
+      href={isLive ? `/watch/${video.id}?live=1` : `/watch/${video.id}`}
       className={`group block rounded-lg transition-all duration-200 ${
         isExclusive ? 'relative' : ''
       }`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Exclusive gradient border (subtle) */}
+      {/* Exclusive gradient border */}
       {isExclusive && (
         <div
           className="absolute -inset-[1px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
           style={{
-            background:
-              'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(245,158,11,0.15))',
+            background: 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(245,158,11,0.15))',
             zIndex: 0,
           }}
         />
@@ -112,18 +111,22 @@ export default function ContentCard({
       <div className="relative z-[1]">
         {/* Thumbnail */}
         <div className="relative overflow-hidden rounded-lg">
-          {/* Live glow ring for live exclusive */}
+          {/* Glow rings */}
           {isLive && isExclusive && (
             <div className="absolute -inset-[1px] rounded-lg animate-ember-glow pointer-events-none" />
           )}
-
-          {/* Live red glow for live non-exclusive */}
           {isLive && !isExclusive && (
             <div className="absolute -inset-[1px] rounded-lg animate-pulse-live opacity-30 pointer-events-none" />
           )}
 
-          <div className="transform transition-transform duration-200 group-hover:scale-[1.02]">
-            {/* Actual thumbnail or placeholder */}
+          {/* Hover scale + preview simulation */}
+          <div
+            className="transform transition-all duration-300 ease-out"
+            style={{
+              transform: `scale(${1 + hoverIntensity * 0.02})`,
+              filter: hoverIntensity ? `brightness(${1 + hoverIntensity * 0.08}) saturate(${1 + hoverIntensity * 0.1})` : undefined,
+            }}
+          >
             {video.posterUrl ? (
               <img
                 src={video.posterUrl}
@@ -133,9 +136,18 @@ export default function ContentCard({
             ) : (
               <ThumbnailPlaceholder title={video.title} isLive={isLive} />
             )}
+
+            {/* Preview shimmer overlay — simulates hover preview */}
+            <div
+              className="absolute inset-0 rounded-lg pointer-events-none transition-opacity duration-300"
+              style={{
+                opacity: hoverIntensity,
+                background: 'linear-gradient(135deg, transparent 0%, rgba(124,58,237,0.06) 25%, rgba(245,158,11,0.04) 50%, transparent 75%)',
+              }}
+            />
           </div>
 
-          {/* Top-left badge — Live or Wiitoo Pick */}
+          {/* Top-left badge */}
           <div className="absolute top-2 left-2 flex gap-1.5">
             {isLive && (
               <span className="px-1.5 py-0.5 bg-live text-white text-[11px] font-semibold rounded-[3px] flex items-center gap-1 shadow-sm">
@@ -144,7 +156,8 @@ export default function ContentCard({
               </span>
             )}
             {!isLive && isExclusive && (
-              <span className="px-1.5 py-0.5 text-[11px] font-semibold rounded-[3px] shadow-sm"
+              <span
+                className="px-1.5 py-0.5 text-[11px] font-semibold rounded-[3px] shadow-sm"
                 style={{
                   background: 'linear-gradient(135deg, rgba(124,58,237,0.25), rgba(245,158,11,0.12))',
                   color: 'rgba(196, 181, 253, 0.9)',
@@ -155,7 +168,7 @@ export default function ContentCard({
             )}
           </div>
 
-          {/* Bottom-right — duration / viewer count */}
+          {/* Bottom-right info */}
           <div className="absolute bottom-2 right-2">
             {!isLive && video.duration > 0 && (
               <span className="px-1 py-[1px] bg-black/80 text-white text-[11px] font-medium rounded-[3px]">
@@ -173,7 +186,6 @@ export default function ContentCard({
 
         {/* Meta below thumbnail */}
         <div className={`mt-2.5 ${size === 'large' ? 'px-0.5' : ''}`}>
-          {/* Title */}
           <h3
             className={`font-semibold text-text-primary leading-snug line-clamp-2 ${
               size === 'large' ? 'text-[15px]' : 'text-[14px]'
