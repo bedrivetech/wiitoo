@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useUiStore } from '@/lib/store';
 import type { ChatMessage } from '@/lib/types';
 
@@ -71,28 +70,25 @@ export function ChatDrawer() {
     }
   }, [messages.length, isChatOpen]);
 
+  // Use CSS transitions instead of AnimatePresence to avoid
+  // React 19 + framer-motion insertBefore crash with multiple children.
+  // Desktop inline chat uses its own AnimatePresence in watch-page-client.
   return (
-    <AnimatePresence>
-      {isChatOpen && (
-        <>
-          {/* Mobile backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 bg-black/60 z-40 md:hidden"
-            onClick={toggleChat}
-          />
+    <>
+      {/* Mobile backdrop */}
+      <div
+        className={`fixed inset-0 bg-black/60 z-40 md:hidden transition-opacity duration-200 ${
+          isChatOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={isChatOpen ? toggleChat : undefined}
+      />
 
-          {/* Panel */}
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="fixed right-0 top-0 h-full w-[360px] max-w-[85vw] z-50 chat-panel flex flex-col"
-          >
+      {/* Panel */}
+      <div
+        className={`fixed right-0 top-0 h-full w-[360px] max-w-[85vw] z-50 chat-panel flex flex-col transition-transform duration-300 ease-out ${
+          isChatOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-bg-border shrink-0">
               <div className="flex items-center gap-2">
@@ -146,9 +142,7 @@ export function ChatDrawer() {
                 </button>
               </div>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          </div>
+    </>
   );
 }
