@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/lib/api-client';
 import { EmberParticles } from '@/components/auth/ember-particles';
+import { BackgroundCarousel } from '@/components/auth/background-carousel';
 
 /* ─── Types ─── */
 type AuthStep = 'vibe' | 'name' | 'key' | 'otp' | 'welcome' | 'login' | 'reset' | 'reset-otp' | 'reset-key';
@@ -75,17 +76,16 @@ export default function AuthPage() {
 
   return (
     <AuthContext.Provider value={{ step, goTo, email, setEmail, username, setUsername, displayName, setDisplayName, selectedVibes, setSelectedVibes, redirectTo }}>
-      <div className="relative min-h-screen overflow-hidden bg-bg-base selection:bg-brand-500/20">
-        {/* Ambient haze */}
-        <div className="fixed inset-0 z-0">
-          <div className="absolute top-1/4 left-1/4 w-[700px] h-[700px] rounded-full bg-brand-600/4 blur-[140px]" />
-          <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] rounded-full bg-ember-500/3 blur-[120px]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-brand-700/2 blur-[100px]" />
-        </div>
+      {/* ─── Cinematic Background ─── */}
+      <BackgroundCarousel
+        selectedVibes={step === 'welcome' ? selectedVibes : step === 'vibe' ? [] : selectedVibes}
+        mood={step === 'welcome' ? 'welcome' : step === 'login' ? 'login' : 'default'}
+      />
 
-        <EmberParticles focusIntensity={step === 'welcome' ? 0.9 : step === 'vibe' ? 0.2 : 0.4} />
+      {/* Ember particles overlay */}
+      <EmberParticles focusIntensity={step === 'welcome' ? 0.9 : step === 'vibe' ? 0.2 : 0.4} />
 
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
           <div className="w-full max-w-[440px]">
             <AnimatePresence mode="wait">
               {step === 'vibe' && <VibePicker key="vibe" />}
@@ -110,7 +110,6 @@ export default function AuthPage() {
             wiitoo
           </span>
         </motion.div>
-      </div>
     </AuthContext.Provider>
   );
 }
@@ -263,10 +262,14 @@ function StepIndicator({ total, current, labels }: { total: number; current: num
 function VibePicker() {
   const { goTo, selectedVibes, setSelectedVibes } = useAuthCtx();
 
+  // Explicit toggle — reads current state directly for reliability
   const toggle = (id: string) => {
-    setSelectedVibes((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev]
-    );
+    const isSelected = selectedVibes.includes(id);
+    if (isSelected) {
+      setSelectedVibes(selectedVibes.filter((c: string) => c !== id));
+    } else {
+      setSelectedVibes([...selectedVibes, id]);
+    }
   };
 
   // Grid layout: 2 columns, taller cells with illustration feel
@@ -293,7 +296,8 @@ function VibePicker() {
         Pick a few you love. We&apos;ll make Wiitoo feel like yours.
       </motion.p>
 
-      <div className="grid grid-cols-2 gap-2.5 mb-5 max-h-[340px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-brand-500/20">
+      <div className="grid grid-cols-2 gap-2.5 mb-5 max-h-[380px] 2xl:max-h-[420px] overflow-y-auto pr-1 overflow-x-hidden scrollbar-thin scrollbar-thumb-brand-500/20"
+        style={{ scrollbarGutter: 'stable' }}>
         {VIBES.map((vibe, i) => {
           const isSelected = selectedVibes.includes(vibe.id);
           return (
@@ -352,6 +356,19 @@ function VibePicker() {
           ? 'Pick at least one'
           : `Continue with ${selectedVibes.length} vibe${selectedVibes.length > 1 ? 's' : ''} →`}
       </PrimaryButton>
+
+      {/* Quick reachability note */}
+      {selectedVibes.length === 0 && (
+        <motion.p
+          className="text-center mt-2 text-tiny"
+          style={{ color: 'var(--color-text-muted)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2 }}
+        >
+          Tap any card above to select your vibes
+        </motion.p>
+      )}
 
       <motion.p
         className="text-center mt-3 text-tiny"

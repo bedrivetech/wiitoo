@@ -492,6 +492,13 @@ input[type="range"].volume-slider-vertical::-moz-range-thumb {
   animation: mini-player-in 0.2s ease-in reverse forwards;
 }
 
+/* ─── Background Carousel ─── */
+@keyframes lightSweep {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* ─── Emoji Hover Animation ─── */
 .emoji-btn:hover .emoji-icon {
   display: inline-block;
