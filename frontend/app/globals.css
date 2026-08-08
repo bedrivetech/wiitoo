@@ -1,0 +1,275 @@
+/* ─── Wiitoo Design System ───
+ *  Warm dark palette. Crow aesthetic.
+ *  Violet primary × Amber accent.
+ *  All spacing 4px grid.
+ */
+
+@import "tailwindcss";
+
+/* ─── Theme Tokens ─── */
+@theme {
+  /* Backgrounds — warm charcoal, not cold black */
+  --color-bg-base: #0b0b0b;
+  --color-bg-raised: #141414;
+  --color-bg-elevated: #1a1a1a;
+  --color-bg-hover: #1e1e1e;
+  --color-bg-active: #252525;
+  --color-bg-border: #2a2a2a;
+  --color-bg-overlay: rgba(0, 0, 0, 0.72);
+  --color-bg-glass: rgba(255, 255, 255, 0.04);
+  --color-bg-glass-hover: rgba(255, 255, 255, 0.08);
+
+  /* Brand — Violet */
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+
+  /* Warm accent — Amber */
+  --color-ember-50: #fffbeb;
+  --color-ember-100: #fef3c7;
+  --color-ember-200: #fde68a;
+  --color-ember-300: #fcd34d;
+  --color-ember-400: #fbbf24;
+  --color-ember-500: #f59e0b;
+  --color-ember-600: #d97706;
+
+  /* Text — warm whites */
+  --color-text-primary: #f1f1f1;
+  --color-text-secondary: #a1a1a1;
+  --color-text-tertiary: #7a7a7a;
+  --color-text-muted: #555555;
+  --color-text-disabled: #333333;
+
+  /* Semantic */
+  --color-live: #ef4444;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  /* Font */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Radius */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+}
+
+/* ─── Base Layer ─── */
+@layer base {
+  * {
+    scrollbar-color: var(--color-bg-border) transparent;
+    scrollbar-width: thin;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+  }
+
+  ::selection {
+    background-color: var(--color-brand-600);
+    color: white;
+  }
+
+  /* Scrollbar styling for Webkit */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-bg-border);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
+  }
+}
+
+/* ─── Typography Utilities ─── */
+@layer utilities {
+  .text-title-1 {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .text-title-2 {
+    font-size: 1.5rem;
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .text-title-3 {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .text-subtitle {
+    font-size: 1.0625rem;
+    line-height: 1.4;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  .text-body {
+    font-size: 1rem;
+    line-height: 1.6;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+  .text-small {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+  .text-tiny {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+  .text-caption {
+    font-size: 0.6875rem;
+    line-height: 1.3;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+}
+
+/* ─── Component Utilities ─── */
+
+/* Ember glow for exclusive creators */
+@layer utilities {
+  .ring-ember {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-ember-500) 30%, transparent),
+                0 0 16px -4px color-mix(in srgb, var(--color-ember-500) 15%, transparent);
+  }
+  .ring-ember-subtle {
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--color-ember-500) 15%, transparent);
+  }
+  .gradient-brand-vertical {
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--color-brand-600) 8%, transparent), transparent);
+  }
+  .gradient-ember-horizontal {
+    background: linear-gradient(to right, color-mix(in srgb, var(--color-ember-500) 15%, transparent), transparent);
+  }
+  .text-gradient-brand {
+    background: linear-gradient(135deg, var(--color-brand-400), var(--color-ember-400));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* ─── Player Overrides ─── */
+.video-js.wiitoo-player-skin {
+  font-family: var(--font-sans);
+}
+.video-js.wiitoo-player-skin .vjs-control-bar {
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+  height: 4rem;
+  padding: 0 1rem;
+  padding-top: 1.5rem;
+}
+.video-js.wiitoo-player-skin .vjs-play-progress {
+  background: linear-gradient(to right, var(--color-brand-600), var(--color-ember-500));
+}
+.video-js.wiitoo-player-skin .vjs-slider {
+  background: rgba(255,255,255,0.15);
+}
+.video-js.wiitoo-player-skin .vjs-volume-level {
+  background: var(--color-brand-500);
+}
+
+/* ─── Animations ─── */
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes ember-glow {
+  0%, 100% { box-shadow: 0 0 8px -2px color-mix(in srgb, var(--color-ember-500) 20%, transparent); }
+  50% { box-shadow: 0 0 16px -2px color-mix(in srgb, var(--color-ember-500) 40%, transparent); }
+}
+
+.animate-pulse-live {
+  animation: pulse-live 2s ease-in-out infinite;
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+.animate-ember-glow {
+  animation: ember-glow 3s ease-in-out infinite;
+}
+
+/* ─── Range Input Styling ─── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: white;
+  margin-top: -4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+input[type="range"]:hover::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+/* ─── Chat Slide-in ─── */
+.chat-panel {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background: rgba(11, 11, 11, 0.88);
+  border-left: 1px solid var(--color-bg-border);
+}
