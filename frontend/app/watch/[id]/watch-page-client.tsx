@@ -1,5 +1,7 @@
 'use client';
 
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { WiitooPlayer } from '@/components/player/wiitoo-player';
 import { TitleRow } from '@/components/watch/title-row';
 import { InfoRow } from '@/components/watch/info-row';
@@ -7,7 +9,7 @@ import { Description } from '@/components/watch/description';
 import { CommentsSection } from '@/components/watch/comments-section';
 import { ChatDrawer } from '@/components/watch/chat-drawer';
 import { useUiStore } from '@/lib/store';
-import type { WatchPageData } from '@/lib/types';
+import type { WatchPageData, ChatMessage } from '@/lib/types';
 
 /* ── Mock data ── */
 const MOCK_DATA: WatchPageData = {
@@ -30,7 +32,7 @@ const MOCK_DATA: WatchPageData = {
     },
     views: 124000,
     likes: 2300,
-    publishedAt: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+    publishedAt: new Date(Date.now() - 7200000).toISOString(),
     duration: 3720,
     isLive: true,
     liveViewers: 4321,
@@ -58,11 +60,7 @@ This stream is part of the Wiitoo Exclusives program, supporting creators who pu
   comments: [
     {
       id: 'pin-1',
-      author: {
-        username: 'maya_storm',
-        displayName: 'Maya Storm',
-        isExclusive: true,
-      },
+      author: { username: 'maya_storm', displayName: 'Maya Storm', isExclusive: true },
       text: 'Welcome everyone! Drop a 🔥 if you\'ve been waiting for this!',
       createdAt: new Date(Date.now() - 3600000).toISOString(),
       reactions: { fire: 342, heart: 89, laugh: 12 },
@@ -72,48 +70,19 @@ This stream is part of the Wiitoo Exclusives program, supporting creators who pu
     },
     {
       id: 'c1',
-      author: {
-        username: 'pixel_runner',
-        displayName: 'Pixel Runner',
-        isExclusive: false,
-      },
+      author: { username: 'pixel_runner', displayName: 'Pixel Runner', isExclusive: false },
       text: 'The production quality on this is actually insane. Every other platform should take notes.',
       createdAt: new Date(Date.now() - 3500000).toISOString(),
       reactions: { fire: 128, heart: 34, laugh: 5 },
       timestamp: 45,
       replies: [
-        {
-          id: 'c1r1',
-          author: {
-            username: 'maya_storm',
-            displayName: 'Maya Storm',
-            isExclusive: true,
-          },
-          text: 'thank you! the team worked really hard on this one ❤️',
-          createdAt: new Date(Date.now() - 3400000).toISOString(),
-          reactions: { fire: 56, heart: 92, laugh: 2 },
-          isCreator: true,
-        },
-        {
-          id: 'c1r2',
-          author: {
-            username: 'nina_codes',
-            displayName: 'Nina Codes',
-            isExclusive: true,
-          },
-          text: 'the lighting setup alone took 3 days lol',
-          createdAt: new Date(Date.now() - 3300000).toISOString(),
-          reactions: { fire: 23, heart: 12, laugh: 8 },
-        },
+        { id: 'c1r1', author: { username: 'maya_storm', displayName: 'Maya Storm', isExclusive: true }, text: 'thank you! the team worked really hard on this one ❤️', createdAt: new Date(Date.now() - 3400000).toISOString(), reactions: { fire: 56, heart: 92, laugh: 2 }, isCreator: true },
+        { id: 'c1r2', author: { username: 'nina_codes', displayName: 'Nina Codes', isExclusive: true }, text: 'the lighting setup alone took 3 days lol', createdAt: new Date(Date.now() - 3300000).toISOString(), reactions: { fire: 23, heart: 12, laugh: 8 } },
       ],
     },
     {
       id: 'c2',
-      author: {
-        username: 'nina_codes',
-        displayName: 'Nina Codes',
-        isExclusive: true,
-      },
+      author: { username: 'nina_codes', displayName: 'Nina Codes', isExclusive: true },
       text: 'So proud to be part of this 🙌 What\'s your favorite moment so far?',
       createdAt: new Date(Date.now() - 3200000).toISOString(),
       reactions: { fire: 89, heart: 45, laugh: 3 },
@@ -121,33 +90,21 @@ This stream is part of the Wiitoo Exclusives program, supporting creators who pu
     },
     {
       id: 'c3',
-      author: {
-        username: 'viewer_3492',
-        displayName: 'Jeff K.',
-        isExclusive: false,
-      },
+      author: { username: 'viewer_3492', displayName: 'Jeff K.', isExclusive: false },
       text: 'This is my first time on Wiitoo and I\'m honestly impressed. The quality is next level.',
       createdAt: new Date(Date.now() - 3000000).toISOString(),
       reactions: { fire: 45, heart: 67, laugh: 4 },
     },
     {
       id: 'c4',
-      author: {
-        username: 'superfan99',
-        displayName: 'SuperFan99',
-        isExclusive: false,
-      },
+      author: { username: 'superfan99', displayName: 'SuperFan99', isExclusive: false },
       text: 'already subbed! best $5 i spend this month 🎉',
       createdAt: new Date(Date.now() - 2800000).toISOString(),
       reactions: { fire: 34, heart: 23, laugh: 1 },
     },
     {
       id: 'c5',
-      author: {
-        username: 'ember_vibes',
-        displayName: 'Ember Vibes',
-        isExclusive: true,
-      },
+      author: { username: 'ember_vibes', displayName: 'Ember Vibes', isExclusive: true },
       text: 'the crossover energy is unmatched 🔥🔥🔥',
       createdAt: new Date(Date.now() - 2500000).toISOString(),
       reactions: { fire: 67, heart: 12, laugh: 3 },
@@ -155,47 +112,25 @@ This stream is part of the Wiitoo Exclusives program, supporting creators who pu
     },
     {
       id: 'c6',
-      author: {
-        username: 'midnight_owl',
-        displayName: 'Midnight Owl',
-        isExclusive: false,
-      },
+      author: { username: 'midnight_owl', displayName: 'Midnight Owl', isExclusive: false },
       text: 'chat is moving so fast i can\'t keep up lol',
       createdAt: new Date(Date.now() - 2200000).toISOString(),
       reactions: { fire: 12, heart: 8, laugh: 34 },
     },
     {
       id: 'c7',
-      author: {
-        username: 'tech_wizard',
-        displayName: 'Tech Wizard',
-        isExclusive: false,
-      },
+      author: { username: 'tech_wizard', displayName: 'Tech Wizard', isExclusive: false },
       text: 'Does anyone know what camera setup they\'re using? The footage looks cinematic.',
       createdAt: new Date(Date.now() - 2000000).toISOString(),
       reactions: { fire: 8, heart: 15, laugh: 2 },
       timestamp: 1560,
       replies: [
-        {
-          id: 'c7r1',
-          author: {
-            username: 'pixel_runner',
-            displayName: 'Pixel Runner',
-            isExclusive: false,
-          },
-          text: 'pretty sure they\'re running Sony FX3s. The depth of field gives it away.',
-          createdAt: new Date(Date.now() - 1800000).toISOString(),
-          reactions: { fire: 18, heart: 6, laugh: 1 },
-        },
+        { id: 'c7r1', author: { username: 'pixel_runner', displayName: 'Pixel Runner', isExclusive: false }, text: 'pretty sure they\'re running Sony FX3s. The depth of field gives it away.', createdAt: new Date(Date.now() - 1800000).toISOString(), reactions: { fire: 18, heart: 6, laugh: 1 } },
       ],
     },
     {
       id: 'sc1',
-      author: {
-        username: 'big_spender',
-        displayName: 'Big Spender',
-        isExclusive: false,
-      },
+      author: { username: 'big_spender', displayName: 'Big Spender', isExclusive: false },
       text: 'Incredible content Maya! This is exactly what the platform needed. Keep pushing boundaries!',
       createdAt: new Date(Date.now() - 1500000).toISOString(),
       reactions: { fire: 78, heart: 45, laugh: 2 },
@@ -204,102 +139,6 @@ This stream is part of the Wiitoo Exclusives program, supporting creators who pu
     },
   ],
 };
-
-export function WatchPageClient({ videoId }: { videoId: string }) {
-  const video = MOCK_DATA.video;
-  const comments = MOCK_DATA.comments;
-  const isChatOpen = useUiStore((s) => s.isChatOpen);
-
-  const handleSeekTo = (seconds: number) => {
-    /* In future: find player ref and seek */
-    console.log('Seek to:', seconds);
-  };
-
-  return (
-    <div className="min-h-screen bg-bg-base">
-      {/* ── Nav bar (minimal for now) ── */}
-      <header className="h-14 border-b border-bg-border flex items-center px-4 md:px-6 gap-4">
-        <span className="text-title-3 text-gradient-brand font-bold tracking-tight">
-          wiitoo
-        </span>
-        <div className="flex-1 flex justify-center max-w-xl mx-auto">
-          <div className="w-full max-w-md flex items-center bg-bg-raised rounded-lg px-3 py-1.5 border border-bg-border">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted shrink-0">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search"
-              className="flex-1 bg-transparent text-small text-text-primary placeholder-text-muted px-2 py-0.5 focus:outline-none"
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="px-3 py-1.5 text-tiny font-medium text-text-primary bg-bg-raised rounded-lg border border-bg-border hover:bg-bg-hover transition-colors">
-            Log in
-          </button>
-          <button className="px-3 py-1.5 text-tiny font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition-colors">
-            Sign up
-          </button>
-        </div>
-      </header>
-
-      {/* ── Player + Content layout ── */}
-      <main className="mx-auto max-w-[1360px]">
-        {/* Player area — adapts width when chat is open */}
-        <div className="relative">
-          <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
-            <div className="px-0 md:px-6 pt-0 md:pt-6">
-              <WiitooPlayer
-                src={video.hlsUrl}
-                poster={video.posterUrl}
-                isLive={video.isLive}
-                title={video.title}
-                liveViewers={video.liveViewers}
-              />
-            </div>
-          </div>
-
-          {/* Chat drawer — overlaid on desktop, slides over player content */}
-          <div className="hidden md:block absolute right-0 top-0 h-full">
-            {isChatOpen && (
-              <div className="w-[360px] h-full chat-panel rounded-xl overflow-hidden border border-bg-border">
-                <ChatDrawerInline onClose={() => useUiStore.getState().closeChat()} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Title — full width below player, not fighting chat */}
-        <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
-          <TitleRow title={video.title} isLive={video.isLive} liveViewers={video.liveViewers} />
-          <InfoRow
-            creator={video.creator}
-            views={video.views}
-            likes={video.likes}
-            publishedAt={video.publishedAt}
-          />
-          <Description text={video.description} />
-          <CommentsSection
-            comments={comments}
-            totalComments={comments.length + 47} /* mock total */
-            onSeekTo={handleSeekTo}
-          />
-        </div>
-      </main>
-
-      {/* ── Mobile/tablet chat drawer (fixed overlay) ── */}
-      <ChatDrawer />
-
-      {/* Bottom spacer for mobile nav */}
-      <div className="h-20 md:hidden" />
-    </div>
-  );
-}
-
-/* ── Inline chat panel for desktop (slides directly next to player) ── */
-import type { ChatMessage } from '@/lib/types';
 
 const INLINE_CHAT: ChatMessage[] = [
   { id: 'i1', username: 'pixel_runner', displayName: 'Pixel Runner', text: 'This is incredible! Been waiting for this all week 🔥', badge: 'sub', timestamp: Date.now() - 60000 },
@@ -312,11 +151,24 @@ const INLINE_CHAT: ChatMessage[] = [
   { id: 'i8', username: 'big_spender', displayName: 'Big Spender', text: 'deserves way more viewers honestly', isSuperchat: true, superchatAmount: 15, timestamp: Date.now() - 1000 },
 ];
 
+/* ── Inline Chat Drawer ── */
 function ChatDrawerInline({ onClose }: { onClose: () => void }) {
-  const messagesEndRef = useRefStore();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 350);
+  }, []);
 
   return (
-    <div className="flex flex-col h-full">
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="flex flex-col h-full"
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-bg-border shrink-0">
         <div className="flex items-center gap-2">
@@ -339,8 +191,8 @@ function ChatDrawerInline({ onClose }: { onClose: () => void }) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
-        {INLINE_CHAT.map((msg) => (
-          <div key={msg.id} className={`animate-fade-in ${msg.isSuperchat ? 'gradient-ember-horizontal rounded-lg px-2 -mx-2' : ''}`}>
+        {INLINE_CHAT.map((msg, i) => (
+          <div key={msg.id} className={`chat-message-enter ${msg.isSuperchat ? 'gradient-ember-horizontal rounded-lg px-2 -mx-2 superchat-enter' : ''}`} style={{ animationDelay: `${i * 0.03}s` }}>
             <div className="flex items-start gap-1.5">
               <span className={`shrink-0 text-tiny font-semibold ${
                 msg.badge === 'exclusive' ? 'text-ember-400' :
@@ -361,16 +213,12 @@ function ChatDrawerInline({ onClose }: { onClose: () => void }) {
       {/* Input */}
       <div className="p-3 border-t border-bg-border shrink-0">
         <div className="flex items-center gap-2 bg-bg-raised rounded-lg px-3 py-2 border border-bg-border focus-within:border-brand-600/30 transition-colors">
-          <input
-            type="text"
-            placeholder="Send a message..."
-            className="flex-1 bg-transparent text-small text-text-primary placeholder-text-muted focus:outline-none"
-          />
+          <input type="text" placeholder="Send a message..." className="flex-1 bg-transparent text-small text-text-primary placeholder-text-muted focus:outline-none" />
           <button className="p-1 text-text-muted hover:text-text-secondary transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
+              <polyline points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
             </svg>
           </button>
           <button className="p-1 text-text-muted hover:text-text-secondary transition-colors">
@@ -383,11 +231,161 @@ function ChatDrawerInline({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-function useRefStore() {
-  const ref = { current: null as HTMLDivElement | null };
-  return ref;
+/* ==================================================================
+   MAIN WATCH PAGE CLIENT
+   ================================================================== */
+export function WatchPageClient({ videoId }: { videoId: string }) {
+  const video = MOCK_DATA.video;
+  const comments = MOCK_DATA.comments;
+  const isChatOpen = useUiStore((s) => s.isChatOpen);
+  const closeChat = useUiStore((s) => s.closeChat);
+
+  /* ── Mini-player state ── */
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const [showMiniPlayer, setShowMiniPlayer] = useState(false);
+  const [playerBottom, setPlayerBottom] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!playerContainerRef.current) return;
+      const rect = playerContainerRef.current.getBoundingClientRect();
+      // Player is off-screen when its bottom goes above viewport top
+      const isOff = rect.bottom < 0;
+      setShowMiniPlayer(isOff);
+      setPlayerBottom(rect.bottom);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleSeekTo = useCallback((seconds: number) => {
+    console.log('Seek to:', seconds);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-bg-base">
+      {/* ── Nav bar ── */}
+      <header className="h-14 border-b border-bg-border flex items-center px-4 md:px-6 gap-4">
+        <a href="/" className="text-title-3 text-gradient-brand font-bold tracking-tight hover:opacity-80 transition-opacity">
+          wiitoo
+        </a>
+        <div className="flex-1 flex justify-center max-w-xl mx-auto">
+          <div className="w-full max-w-md flex items-center bg-bg-raised rounded-lg px-3 py-1.5 border border-bg-border">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted shrink-0">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input type="text" placeholder="Search" className="flex-1 bg-transparent text-small text-text-primary placeholder-text-muted px-2 py-0.5 focus:outline-none" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <a href="/auth" className="px-3 py-1.5 text-tiny font-medium text-text-primary bg-bg-raised rounded-lg border border-bg-border hover:bg-bg-hover transition-colors">
+            Log in
+          </a>
+          <a href="/auth" className="px-3 py-1.5 text-tiny font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition-colors">
+            Sign up
+          </a>
+        </div>
+      </header>
+
+      {/* ── Player + Content layout ── */}
+      <main className="mx-auto max-w-[1360px]">
+        {/* Player area */}
+        <div ref={playerContainerRef} className="relative">
+          <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
+            <div className="px-0 md:px-6 pt-0 md:pt-6">
+              <WiitooPlayer
+                src={video.hlsUrl}
+                poster={video.posterUrl}
+                isLive={video.isLive}
+                title={video.title}
+                liveViewers={video.liveViewers}
+              />
+            </div>
+          </div>
+
+          {/* Desktop inline chat (directly next to player) */}
+          <div className="hidden md:block absolute right-0 top-0 h-full">
+            <AnimatePresence>
+              {isChatOpen && (
+                <div className="w-[360px] h-full chat-panel rounded-xl overflow-hidden border border-bg-border">
+                  <ChatDrawerInline onClose={closeChat} />
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Content below player */}
+        <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
+          <div className={showMiniPlayer ? 'opacity-30 pointer-events-none select-none' : ''}>
+            <TitleRow title={video.title} isLive={video.isLive} liveViewers={video.liveViewers} />
+            <InfoRow
+              creator={video.creator}
+              views={video.views}
+              likes={video.likes}
+              publishedAt={video.publishedAt}
+            />
+            <Description text={video.description} />
+            <CommentsSection
+              comments={comments}
+              totalComments={comments.length + 47}
+              onSeekTo={handleSeekTo}
+            />
+          </div>
+        </div>
+      </main>
+
+      {/* ── Floating Mini-Player ── */}
+      <AnimatePresence>
+        {showMiniPlayer && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85, y: 40, x: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, scale: 0.85, y: 40 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed bottom-4 right-4 z-50 w-[320px] md:w-[360px]"
+          >
+            <div className="rounded-xl overflow-hidden border-2 border-bg-border shadow-2xl">
+              <WiitooPlayer
+                src={video.hlsUrl}
+                poster={video.posterUrl}
+                isLive={video.isLive}
+                title={video.title}
+                liveViewers={video.liveViewers}
+              />
+            </div>
+            {/* Mini-player drag handle */}
+            <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+              <div className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5">
+                <span className="text-white text-[10px] font-medium truncate block max-w-[200px]">
+                  {video.title}
+                </span>
+              </div>
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="bg-black/60 backdrop-blur-sm rounded-md p-1 hover:bg-black/80 transition-colors"
+                aria-label="Go to player"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                  <path d="M19 15l-7-7-7 7" stroke="white" strokeWidth="2" fill="none" />
+                </svg>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Mobile/tablet chat drawer ── */}
+      <ChatDrawer />
+
+      {/* Bottom spacer */}
+      <div className="h-20 md:hidden" />
+    </div>
+  );
 }

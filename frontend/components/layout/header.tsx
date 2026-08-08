@@ -122,7 +122,7 @@ export default function Header() {
               </button>
             ) : (
               <Link
-                href="/auth/login"
+                href="/auth"
                 className="p-2 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-all"
                 title="Upload"
               >
@@ -211,7 +211,7 @@ export default function Header() {
               </div>
             ) : (
               <Link
-                href="/auth/login"
+                href="/auth"
                 className="w-7 h-7 rounded-full bg-bg-elevated border border-bg-border flex items-center justify-center hover:border-text-muted transition-colors"
                 title="Account"
               >

@@ -27,3 +27,10 @@ recordings/
 tmp/wiitoo
 vendor/
 wiitoo
+
+# Next.js build
+.next/
+
+# Go compiled binaries
+server
+

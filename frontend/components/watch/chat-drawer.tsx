@@ -16,9 +16,9 @@ const MOCK_CHAT: ChatMessage[] = [
 ];
 
 /* ── Single chat message ── */
-function ChatMessageItem({ msg }: { msg: ChatMessage }) {
+function ChatMessageItem({ msg, index }: { msg: ChatMessage; index: number }) {
   return (
-    <div className={`animate-slide-up ${msg.isSuperchat ? 'gradient-ember-horizontal rounded-lg px-2 -mx-2' : ''}`}>
+    <div className={`chat-message-enter ${msg.isSuperchat ? 'gradient-ember-horizontal rounded-lg px-2 -mx-2 superchat-enter' : ''}`} style={{ animationDelay: `${index * 0.03}s` }}>
       <div className="flex items-start gap-1.5">
         <span
           className={`shrink-0 text-tiny font-semibold ${
@@ -115,8 +115,8 @@ export function ChatDrawer() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
-              {messages.map((msg) => (
-                <ChatMessageItem key={msg.id} msg={msg} />
+              {messages.map((msg, i) => (
+                <ChatMessageItem key={msg.id} msg={msg} index={i} />
               ))}
               <div ref={messagesEndRef} />
             </div>

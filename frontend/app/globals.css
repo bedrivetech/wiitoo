@@ -355,3 +355,155 @@ input[type="range"]:hover::-webkit-slider-thumb {
 .animate-card-enter:nth-child(3n) { animation-delay: 0.1s; }
 .animate-card-enter:nth-child(4n) { animation-delay: 0.15s; }
 .animate-card-enter:nth-child(5n) { animation-delay: 0.2s; }
+/* ─── Aurora Loading Animation ─── */
+@keyframes aurora-drift {
+  0% { background-position: 0% 50%; opacity: 0.3; }
+  25% { background-position: 50% 0%; opacity: 0.5; }
+  50% { background-position: 100% 50%; opacity: 0.3; }
+  75% { background-position: 50% 100%; opacity: 0.5; }
+  100% { background-position: 0% 50%; opacity: 0.3; }
+}
+
+.aurora-gradient {
+  background-size: 200% 200%;
+  animation: aurora-drift 6s ease-in-out infinite;
+}
+
+/* ─── Progress Bar Gradient Fill ─── */
+.wiitoo-progress-fill {
+  background: linear-gradient(to right, var(--color-brand-600), var(--color-brand-400), var(--color-ember-500));
+}
+.wiitoo-progress-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, rgba(245, 158, 11, 0.3));
+  filter: blur(4px);
+}
+
+/* ─── Vertical Volume Slider ─── */
+input[type="range"].volume-slider-vertical {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 80px;
+  width: 6px;
+  margin: 0;
+}
+input[type="range"].volume-slider-vertical::-webkit-slider-runnable-track {
+  height: 100%;
+  width: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.15);
+}
+input[type="range"].volume-slider-vertical::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: white;
+  margin-left: -4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+input[type="range"].volume-slider-vertical::-moz-range-track {
+  width: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.15);
+}
+input[type="range"].volume-slider-vertical::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: white;
+  border: none;
+}
+
+/* ─── Superchat Amber Glow ─── */
+@keyframes superchat-glow {
+  0% { box-shadow: inset 0 0 0 0 rgba(245, 158, 11, 0); border-left-color: rgba(245, 158, 11, 0); }
+  15% { box-shadow: inset 0 0 20px -4px rgba(245, 158, 11, 0.25); border-left-color: rgba(245, 158, 11, 0.4); }
+  100% { box-shadow: inset 0 0 0 0 rgba(245, 158, 11, 0); border-left-color: rgba(245, 158, 11, 0.15); }
+}
+.superchat-enter {
+  animation: superchat-glow 3s ease-out forwards;
+}
+
+/* ─── Chat Message Enter ─── */
+@keyframes chat-message-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.chat-message-enter {
+  animation: chat-message-enter 0.25s ease-out both;
+}
+.chat-message-enter:nth-child(1) { animation-delay: 0.02s; }
+.chat-message-enter:nth-child(2) { animation-delay: 0.04s; }
+.chat-message-enter:nth-child(3) { animation-delay: 0.06s; }
+
+/* ─── Comment Stagger Animation ─── */
+@keyframes comment-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.comment-enter {
+  animation: comment-enter 0.35s ease-out both;
+}
+.comment-enter:nth-child(1) { animation-delay: 0.03s; }
+.comment-enter:nth-child(2) { animation-delay: 0.06s; }
+.comment-enter:nth-child(3) { animation-delay: 0.09s; }
+.comment-enter:nth-child(4) { animation-delay: 0.12s; }
+.comment-enter:nth-child(5) { animation-delay: 0.15s; }
+.comment-enter:nth-child(6) { animation-delay: 0.18s; }
+
+/* ─── Mini Player Float ─── */
+@keyframes mini-player-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.mini-player-enter {
+  animation: mini-player-in 0.35s ease-out forwards;
+}
+.mini-player-exit {
+  animation: mini-player-in 0.2s ease-in reverse forwards;
+}
+
+/* ─── Emoji Hover Animation ─── */
+.emoji-btn:hover .emoji-icon {
+  display: inline-block;
+  animation: emoji-wiggle 0.4s ease;
+}
+@keyframes emoji-wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-8deg) scale(1.2); }
+  50% { transform: rotate(8deg) scale(1.15); }
+  75% { transform: rotate(-4deg) scale(1.05); }
+}
+.emoji-icon {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}

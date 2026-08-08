@@ -129,13 +129,13 @@ function CommentItem({ comment, depth = 0, onSeekTo }: CommentItemProps) {
               <button
                 key={r.type}
                 onClick={() => toggleReaction(r.type)}
-                className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-tiny transition-all ${
+                className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-tiny transition-all emoji-btn ${
                   reacted === r.type
                     ? 'bg-brand-600/15 text-brand-400'
                     : 'bg-bg-hover text-text-muted hover:bg-bg-active hover:text-text-secondary'
                 }`}
               >
-                <span>{r.emoji}</span>
+                <span className="emoji-icon">{r.emoji}</span>
                 {r.count > 0 && <span className="font-medium">{r.count}</span>}
               </button>
             ))}
