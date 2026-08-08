@@ -43,7 +43,9 @@ func Setup(r chi.Router, admin chi.Router, pool *pgxpool.Pool, rdb *redis.Client
 	emailBuilder := service.NewOTPEmailBuilder(cfg.AppName, cfg.BaseURL)
 
 	// Initialize handlers
-	registerHandler := handler.NewRegisterHandler(authService, otpService, emailSender, emailBuilder)
+	registerHandler := handler.NewRegisterHandler(authService, otpService, emailSender, emailBuilder, userRepo)
+	usernameCheckHandler := handler.NewUsernameCheckHandler(userRepo)
+	creatorHandler := handler.NewCreatorHandler(authService, userRepo)
 	loginHandler := handler.NewLoginHandler(authService)
 	oauthHandler := handler.NewOAuthHandler(oauthService, authService)
 	verifyHandler := handler.NewVerifyHandler(authService, otpService, userRepo, emailSender, emailBuilder)
@@ -75,6 +77,9 @@ func Setup(r chi.Router, admin chi.Router, pool *pgxpool.Pool, rdb *redis.Client
 		r.Get("/{provider}/login", oauthHandler.ProviderLogin)
 		r.Get("/{provider}/callback", oauthHandler.Callback)
 
+		// Username check (no auth required — used during signup)
+		r.Get("/username/check", usernameCheckHandler.CheckUsername)
+
 		// Authenticated endpoints
 		r.Group(func(r chi.Router) {
 			r.Use(authMiddleware.Authenticate)
@@ -83,6 +88,9 @@ func Setup(r chi.Router, admin chi.Router, pool *pgxpool.Pool, rdb *redis.Client
 			r.Patch("/me", profileHandler.UpdateProfile)
 			r.Post("/email/change", profileHandler.EmailChange)
 			r.Post("/email/change/confirm", profileHandler.EmailChangeConfirm)
+
+			// Creator conversion (viewer → creator, self-service)
+			r.Post("/creator/convert", creatorHandler.Convert)
 		})
 	})
 

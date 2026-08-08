@@ -83,9 +83,10 @@ type RefreshToken struct {
 // --- API Request/Response types ---
 
 type RegisterRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Username string `json:"username"`
+	Email     string   `json:"email"`
+	Password  string   `json:"password"`
+	Username  string   `json:"username"`
+	Interests []string `json:"interests,omitempty"`
 }
 
 type LoginRequest struct {
@@ -207,6 +208,38 @@ type CreatorVerificationRequest struct {
 	// Joined fields
 	UserEmail    string `json:"userEmail,omitempty"`
 	UserUsername string `json:"userUsername,omitempty"`
+}
+
+// UsernameCheckResponse is returned by the username availability check endpoint.
+type UsernameCheckResponse struct {
+	Username    string   `json:"username"`
+	Available   bool     `json:"available"`
+	Suggestions []string `json:"suggestions,omitempty"`
+}
+
+// CreatorConversionRequest is sent when a viewer wants to become a creator.
+type CreatorConversionRequest struct {
+	CreatorUsername string   `json:"creator_username"`
+	Category        string   `json:"category"`
+	Bio             string   `json:"bio,omitempty"`
+	DisplayName     *string  `json:"display_name,omitempty"` // Optional: separate creator display name
+	SocialLinks     []string `json:"social_links,omitempty"`
+}
+
+// CreatorConversionResponse is returned after a successful creator conversion.
+type CreatorConversionResponse struct {
+	Message        string `json:"message"`
+	UserID         string `json:"user_id"`
+	CreatorChannel string `json:"creator_channel"`
+	Status         string `json:"status"`
+}
+
+// RegisterWithInterestsRequest extends RegisterRequest with interest categories.
+type RegisterWithInterestsRequest struct {
+	Email     string   `json:"email"`
+	Password  string   `json:"password"`
+	Username  string   `json:"username"`
+	Interests []string `json:"interests,omitempty"`
 }
 
 // Standard error codes

@@ -613,6 +613,87 @@ func (r *UserRepository) UpdateUserNotes(ctx context.Context, userID, notes stri
 	return err
 }
 
+// UpdateUsername updates a user's username.
+func (r *UserRepository) UpdateUsername(ctx context.Context, id, username string) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE users SET username = $2, updated_at = NOW() WHERE id = $1`,
+		id, username,
+	)
+	return err
+}
+
+// CreateCreatorVerificationRequest creates a self-service creator verification request (minimal info).
+func (r *UserRepository) CreateCreatorVerificationRequest(ctx context.Context, userID, category, bio string) error {
+	_, err := r.pool.Exec(ctx,
+		`INSERT INTO creator_verification_requests (user_id, status, notes)
+		 VALUES ($1, 'pending', $2)
+		 ON CONFLICT (user_id) WHERE status = 'pending' DO NOTHING`,
+		userID, "Category: "+category+"\nBio: "+bio,
+	)
+	return err
+}
+
+// SaveUserInterests saves a user's selected interest categories.
+// Accepts category slugs (e.g. "gaming", "tech") — resolves to UUIDs automatically.
+// Uses the category_followers table — same mechanism as following categories.
+func (r *UserRepository) SaveUserInterests(ctx context.Context, userID string, categorySlugs []string) error {
+	if len(categorySlugs) == 0 {
+		return nil
+	}
+
+	// Resolve slugs to category UUIDs
+	placeholders := make([]string, len(categorySlugs))
+	args := make([]any, len(categorySlugs))
+	for i, slug := range categorySlugs {
+		placeholders[i] = "$" + strconv.Itoa(i+1)
+		args[i] = slug
+	}
+
+	rows, err := r.pool.Query(ctx,
+		`SELECT id FROM categories WHERE slug IN (`+strings.Join(placeholders, ", ")+`)`,
+		args...,
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var resolvedIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return err
+		}
+		resolvedIDs = append(resolvedIDs, id)
+	}
+
+	if len(resolvedIDs) == 0 {
+		return nil
+	}
+
+	// Insert into category_followers
+	values := make([]string, len(resolvedIDs))
+	insertArgs := make([]any, 0, 1+len(resolvedIDs))
+	insertArgs = append(insertArgs, userID)
+	for i, cid := range resolvedIDs {
+		values[i] = "($1, $" + strconv.Itoa(i+2) + ")"
+		insertArgs = append(insertArgs, cid)
+	}
+	query := `INSERT INTO category_followers (user_id, category_id) VALUES ` + strings.Join(values, ", ") + ` ON CONFLICT DO NOTHING`
+	_, err = r.pool.Exec(ctx, query, insertArgs...)
+	return err
+}
+
+// ConvertUserToCreator upgrades a viewer to creator role with display name update.
+func (r *UserRepository) ConvertUserToCreator(ctx context.Context, userID, displayName string) error {
+	_, err := r.pool.Exec(ctx,
+		`UPDATE users SET role = 'creator', display_name = $2, creator_applied_at = NOW(), updated_at = NOW()
+		 WHERE id = $1`,
+		userID, displayName,
+	)
+	return err
+}
+
 // SetCreatorVerified updates creator verification status.
 func (r *UserRepository) SetCreatorVerified(ctx context.Context, userID string, verified bool) error {
 	_, err := r.pool.Exec(ctx,

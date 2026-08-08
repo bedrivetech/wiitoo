@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/repository"
 	"github.com/bedrivetech/wiitoo/services/auth/internal/service"
 )
 
@@ -16,14 +17,16 @@ type RegisterHandler struct {
 	otpService  *service.OTPService
 	emailSender service.EmailSender
 	emailBuilder *service.OTPEmailBuilder
+	userRepo    *repository.UserRepository
 }
 
-func NewRegisterHandler(authService *service.AuthService, otpService *service.OTPService, emailSender service.EmailSender, emailBuilder *service.OTPEmailBuilder) *RegisterHandler {
+func NewRegisterHandler(authService *service.AuthService, otpService *service.OTPService, emailSender service.EmailSender, emailBuilder *service.OTPEmailBuilder, userRepo *repository.UserRepository) *RegisterHandler {
 	return &RegisterHandler{
 		authService:  authService,
 		otpService:   otpService,
 		emailSender:  emailSender,
 		emailBuilder: emailBuilder,
+		userRepo:     userRepo,
 	}
 }
 
@@ -54,6 +57,14 @@ func (h *RegisterHandler) Register(w http.ResponseWriter, r *http.Request) {
 			Error:   &model.APIError{Code: model.ErrCodeInternalError, Message: "Internal server error"},
 		})
 		return
+	}
+
+	// Save interest categories if provided
+	if len(req.Interests) > 0 {
+		if err := h.userRepo.SaveUserInterests(r.Context(), user.ID, req.Interests); err != nil {
+			slog.Error("failed to save user interests", "error", err)
+			// Non-fatal — registration already succeeded
+		}
 	}
 
 	// Generate and send OTP for email verification

@@ -103,11 +103,31 @@ func (h *VerifyHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Refresh user data to get updated status
+	user, err = h.userRepo.FindByEmail(r.Context(), req.Email)
+	if err != nil {
+		slog.Error("failed to refresh user after verification", "error", err)
+		writeJSON(w, http.StatusInternalServerError, model.APIResponse{
+			Success: false,
+			Error:   &model.APIError{Code: model.ErrCodeInternalError, Message: "Internal server error"},
+		})
+		return
+	}
+
+	// Generate auth tokens so the user is automatically logged in after verification
+	tokens, err := h.authService.GenerateTokens(r.Context(), user)
+	if err != nil {
+		slog.Error("failed to generate tokens after verification", "error", err)
+		writeJSON(w, http.StatusInternalServerError, model.APIResponse{
+			Success: false,
+			Error:   &model.APIError{Code: model.ErrCodeInternalError, Message: "Internal server error"},
+		})
+		return
+	}
+
 	writeJSON(w, http.StatusOK, model.APIResponse{
 		Success: true,
-		Data: map[string]string{
-			"message": "Email verified successfully",
-		},
+		Data:    tokens,
 	})
 }
 
