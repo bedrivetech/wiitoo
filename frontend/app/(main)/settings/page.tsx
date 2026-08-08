@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
+import { useGsapToggle } from '@/lib/animations';
 
 export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
@@ -18,6 +19,16 @@ export default function SettingsPage() {
 
   const [showCreatorModal, setShowCreatorModal] = useState(false);
   const [creatorMode, setCreatorMode] = useState<'convert' | 'separate' | null>(null);
+  const settingsModalBgRef = useGsapToggle<HTMLDivElement>(showCreatorModal, {
+    inVars: { opacity: 1, scale: 1 },
+    outVars: { opacity: 0, scale: 1 },
+    duration: 0.2,
+  });
+  const settingsModalPanelRef = useGsapToggle<HTMLDivElement>(showCreatorModal, {
+    inVars: { opacity: 1, scale: 1, y: 0 },
+    outVars: { opacity: 0, scale: 0.95, y: 8 },
+    duration: 0.2,
+  });
 
   const handleSave = () => {
     setSaved(true);
@@ -170,18 +181,16 @@ export default function SettingsPage() {
         </section>
       </div>
 
-      {/* ── Creator Conversion Modal — CSS transition ── */}
+      {/* ── Creator Conversion Modal — GSAP animated ── */}
       <div
-        className={`fixed inset-0 z-50 flex items-center justify-center px-4 transition-all duration-200 ease-out ${
-          showCreatorModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        ref={settingsModalBgRef}
+        className={`fixed inset-0 z-50 flex items-center justify-center px-4 ${showCreatorModal ? 'pointer-events-auto' : 'pointer-events-none'}`}
         style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
         onClick={() => setShowCreatorModal(false)}
       >
         <div
-          className={`w-full max-w-md rounded-2xl p-6 border border-bg-border bg-bg-raised transition-all duration-200 ease-out ${
-            showCreatorModal ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-3'
-          }`}
+          ref={settingsModalPanelRef}
+          className={`w-full max-w-md rounded-2xl p-6 border border-bg-border bg-bg-raised`}
           onClick={(e) => e.stopPropagation()}
         >
               <h3 className="text-title-2 mb-2 text-text-primary">Become a Creator</h3>

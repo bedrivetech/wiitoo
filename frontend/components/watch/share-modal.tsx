@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useGsapToggle } from '@/lib/animations';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -13,6 +14,18 @@ export function ShareModal({ isOpen, onClose, url, title }: ShareModalProps) {
   const shareUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
   const [copied, setCopied] = useState(false);
   const [embedCopied, setEmbedCopied] = useState(false);
+  const backdropRef = useGsapToggle<HTMLDivElement>(isOpen, {
+    inVars: { opacity: 1, scale: 1 },
+    outVars: { opacity: 0, scale: 1 },
+    duration: 0.2,
+    ease: 'power2.out',
+  });
+  const panelRef = useGsapToggle<HTMLDivElement>(isOpen, {
+    inVars: { opacity: 1, scale: 1, y: 0 },
+    outVars: { opacity: 0, scale: 0.95, y: 8 },
+    duration: 0.2,
+    ease: 'power2.out',
+  });
 
   const handleCopyLink = async () => {
     try {
@@ -54,16 +67,14 @@ export function ShareModal({ isOpen, onClose, url, title }: ShareModalProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center px-4 transition-all duration-200 ease-out ${
-        isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      }`}
+      ref={backdropRef}
+      className={`fixed inset-0 z-50 flex items-center justify-center px-4 ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
       style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
       onClick={onClose}
     >
       <div
-        className={`w-full max-w-sm rounded-2xl p-5 border border-bg-border bg-bg-elevated shadow-2xl transition-all duration-200 ease-out ${
-          isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-3'
-        }`}
+        ref={panelRef}
+        className={`w-full max-w-sm rounded-2xl p-5 border border-bg-border bg-bg-elevated shadow-2xl ${isOpen ? 'pointer-events-auto' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">

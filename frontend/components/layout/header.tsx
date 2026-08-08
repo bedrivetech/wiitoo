@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import CategoriesBar from '@/components/browse/categories-bar';
 import { useAuthStore } from '@/lib/auth-store';
+import { useGsapToggle } from '@/lib/animations';
 
 /* ── Popular search suggestions ── */
 const POPULAR_SEARCHES = [
@@ -29,6 +30,16 @@ export default function Header() {
   const bellRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useGsapToggle<HTMLDivElement>(showSuggestions, {
+    inVars: { opacity: 1, y: 0, pointerEvents: 'auto' as any },
+    outVars: { opacity: 0, y: -4, pointerEvents: 'none' as any },
+    duration: 0.15,
+  });
+  const bellDropdownRef = useGsapToggle<HTMLDivElement>(bellOpen, {
+    inVars: { opacity: 1, y: 0, pointerEvents: 'auto' as any },
+    outVars: { opacity: 0, y: -4, pointerEvents: 'none' as any },
+    duration: 0.15,
+  });
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
@@ -142,11 +153,10 @@ export default function Header() {
               )}
             </form>
 
-            {/* Suggestions dropdown — CSS transition instead of AnimatePresence */}
+            {/* Suggestions dropdown — GSAP animated */}
             <div
-              className={`absolute top-full left-0 right-0 mt-1 rounded-xl border border-bg-border bg-bg-elevated shadow-2xl overflow-hidden transition-all duration-150 ease-out ${
-                showSuggestions ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-1 pointer-events-none'
-              }`}
+              ref={suggestionsRef}
+              className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-bg-border bg-bg-elevated shadow-2xl overflow-hidden"
             >
               {searchQuery.trim() === '' ? (
                 <>
@@ -217,11 +227,10 @@ export default function Header() {
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-live rounded-full animate-pulse-live" />
                 </button>
 
-                {/* Bell dropdown — CSS transition */}
+                {/* Bell dropdown — GSAP animated */}
                 <div
-                  className={`absolute right-0 top-full mt-2 w-72 rounded-xl border border-bg-border bg-bg-elevated shadow-2xl overflow-hidden transition-all duration-150 ease-out ${
-                    bellOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-1 pointer-events-none'
-                  }`}
+                  ref={bellDropdownRef}
+                  className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-bg-border bg-bg-elevated shadow-2xl overflow-hidden"
                 >
                   <div className="px-3 py-2.5 border-b border-bg-border">
                     <p className="text-small font-semibold text-text-primary">Notifications</p>

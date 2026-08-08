@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState, useRef, useCallback, useMemo, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
+import gsap from 'gsap';
 
 import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/lib/api-client';
 import { EmberParticles } from '@/components/auth/ember-particles';
 import { VideoBackground } from '@/components/auth/video-background';
+import { useGsapMount, useGsapStagger, useGsapHover, useGsapShake, useGsapAnimation } from '@/lib/animations';
 
 /* ─── Types ─── */
 type AuthStep = 'vibe' | 'name' | 'key' | 'otp' | 'welcome' | 'login' | 'reset' | 'reset-otp' | 'reset-key';
@@ -117,12 +119,14 @@ export default function AuthPage() {
 /* ─── Shared Components ─── */
 
 function GlassCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+ const ref = useGsapMount<HTMLDivElement>('glass-card', {
+ from: { opacity: 0, y: 20, scale: 0.97 },
+ to: { opacity: 1, y: 0, scale: 1 },
+ duration: 0.35,
+ });
  return (
  <div
- 
- 
- 
- 
+ ref={ref}
  className={`rounded-2xl p-8 border/50 backdrop-blur-xl ${className}`}
  style={{
  backgroundColor: 'rgba(13, 13, 13, 0.75)',
@@ -257,6 +261,17 @@ function StepIndicator({ total, current, labels }: { total: number; current: num
  ──────────────────────────────────────────────────────────── */
 function VibePicker() {
  const { goTo, selectedVibes, setSelectedVibes } = useAuthCtx();
+ const gridRef = useGsapStagger<HTMLDivElement>('vibe-grid', 'button', {
+ from: { opacity: 0, y: 16, scale: 0.95 },
+ to: { opacity: 1, y: 0, scale: 1 },
+ stagger: 0.04,
+ duration: 0.3,
+ });
+ const hintRef = useGsapMount<HTMLParagraphElement>('vibe-hint', {
+ from: { opacity: 0 },
+ to: { opacity: 1 },
+ duration: 0.3,
+ });
 
  // Explicit toggle — reads current state directly for reliability
  const toggle = (id: string) => {
@@ -292,7 +307,7 @@ function VibePicker() {
  Pick a few you love. We&apos;ll make Wiitoo feel like yours.
  </p>
 
- <div className="grid grid-cols-2 gap-2.5 mb-5 max-h-[380px] 2xl:max-h-[420px] overflow-y-auto pr-1 overflow-x-hidden scrollbar-thin scrollbar-thumb-brand-500/20"
+ <div ref={gridRef} className="grid grid-cols-2 gap-2.5 mb-5 max-h-[380px] 2xl:max-h-[420px] overflow-y-auto pr-1 overflow-x-hidden scrollbar-thin scrollbar-thumb-brand-500/20"
  style={{ scrollbarGutter: 'stable' }}>
  {VIBES.map((vibe, i) => {
  const isSelected = selectedVibes.includes(vibe.id);
@@ -748,11 +763,17 @@ function OtpScreen() {
 
  const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
  const [error, setError] = useState('');
- const [shake, setShake] = useState(false);
+ const [shakeCount, setShakeCount] = useState(0);
  const [cooldown, setCooldown] = useState(30);
  const [canResend, setCanResend] = useState(false);
  const [focusedIndex, setFocusedIndex] = useState(0);
  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+ const shakeRef = useGsapShake<HTMLDivElement>(shakeCount);
+ const otpCardRef = useGsapMount<HTMLDivElement>('otp-card', {
+   from: { opacity: 0, y: 16, scale: 0.97 },
+   to: { opacity: 1, y: 0, scale: 1 },
+   duration: 0.35,
+ });
 
  useEffect(() => { inputRefs.current[0]?.focus(); }, []);
 
@@ -796,10 +817,9 @@ function OtpScreen() {
  await verifyOtp(email, code);
  goTo('welcome');
  } catch (err: unknown) {
- setShake(true);
+ setShakeCount((c) => c + 1);
  setError(err instanceof Error ? err.message : 'That code didn\'t work');
  setOtp(Array(6).fill(''));
- setTimeout(() => setShake(false), 500);
  inputRefs.current[0]?.focus();
  }
  };
@@ -817,9 +837,7 @@ function OtpScreen() {
 
  return (
  <div
- 
- 
- 
+ ref={otpCardRef}
  >
  <GlassCard>
  <StepIndicator total={3} current={2} labels={['Name', 'Key', 'Code']} />
@@ -855,7 +873,7 @@ function OtpScreen() {
  )}
 
  {/* 6 glowing cells */}
- <div className="flex justify-center gap-2.5 mb-6">
+ <div ref={shakeRef} className="flex justify-center gap-2.5 mb-6">
  {otp.map((digit, i) => {
  const isFilled = digit !== '';
  return (
@@ -927,6 +945,13 @@ function WelcomeOverlay() {
  const { goTo, displayName, username, selectedVibes, redirectTo } = useAuthCtx();
  const user = useAuthStore((s) => s.user);
  const name = displayName || user?.display_name || username || 'friend';
+ const staggerRef = useGsapStagger<HTMLDivElement>('welcome', '> *', {
+   from: { opacity: 0, y: 30 },
+   to: { opacity: 1, y: 0 },
+   stagger: 0.1,
+   duration: 0.5,
+ });
+ const loadingRef = useGsapAnimation<HTMLDivElement>();
 
  const vibeLabels = selectedVibes
  .map((id) => VIBES.find((v) => v.id === id)?.emoji)
@@ -937,15 +962,18 @@ function WelcomeOverlay() {
  const timer = setTimeout(() => {
  window.location.href = redirectTo || '/';
  }, 3000);
+ // Animate loading bar
+ gsap.to('#welcome-loading-bar > div', {
+ width: '100%',
+ duration: 2.5,
+ ease: 'power2.inOut',
+ });
  return () => clearTimeout(timer);
  }, [redirectTo]);
 
  return (
  <div
- 
- 
- 
- 
+ ref={staggerRef}
  className="fixed inset-0 z-50 flex flex-col items-center justify-center"
  style={{ background: 'radial-gradient(ellipse at center, rgba(124,58,237,0.08) 0%, rgba(0,0,0,0.95) 70%)' }}
  >
@@ -953,8 +981,6 @@ function WelcomeOverlay() {
  <div
  className="absolute inset-0 pointer-events-none"
  style={{ background: 'radial-gradient(circle at 50% 80%, rgba(245,158,11,0.04) 0%, transparent 50%)' }}
- 
- 
  />
 
  {/* Vibe emojis */}
@@ -1016,6 +1042,7 @@ function WelcomeOverlay() {
 
  {/* Loading bar */}
  <div
+ id="welcome-loading-bar"
  className="h-0.5 rounded-full mt-10 w-32 overflow-hidden"
  style={{ backgroundColor: 'rgba(124,58,237,0.15)' }}
  >
