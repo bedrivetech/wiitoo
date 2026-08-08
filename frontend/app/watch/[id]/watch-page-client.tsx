@@ -168,13 +168,7 @@ function ChatDrawerInline({ onClose }: { onClose: () => void }) {
   }, []);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="flex flex-col h-full"
-    >
+    <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-bg-border shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-small font-semibold text-text-primary">Live Chat</span>
@@ -213,7 +207,7 @@ function ChatDrawerInline({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -433,9 +427,16 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
               <div className="hidden md:block absolute right-0 top-0 h-full">
                 <AnimatePresence>
                   {isChatOpen && (
-                    <div className="w-[360px] h-full chat-panel rounded-xl overflow-hidden border border-bg-border">
+                    <motion.div
+                      key="chat-drawer"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      className="w-[360px] h-full chat-panel rounded-xl overflow-hidden border border-bg-border"
+                    >
                       <ChatDrawerInline onClose={closeChat} />
-                    </div>
+                    </motion.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -474,6 +475,7 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
       <AnimatePresence>
         {showMiniPlayer && (
           <motion.div
+            key="mini-player"
             initial={{ opacity: 0, scale: 0.85, y: 40, x: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: 40 }}
