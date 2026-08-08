@@ -1,6 +1,7 @@
 
 # Build output
 # Dependencies
+node_modules/
 # Docker
 # Environment files
 # Go workspace

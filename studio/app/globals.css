@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-base: #0b0b0b;
+  --color-bg-raised: #141414;
+  --color-bg-elevated: #1a1a1a;
+  --color-bg-hover: #1e1e1e;
+  --color-bg-active: #252525;
+  --color-bg-border: #2a2a2a;
+  --color-bg-glass: rgba(255,255,255,0.04);
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+  --color-ember-50: #fffbeb;
+  --color-ember-100: #fef3c7;
+  --color-ember-200: #fde68a;
+  --color-ember-300: #fcd34d;
+  --color-ember-400: #fbbf24;
+  --color-ember-500: #f59e0b;
+  --color-ember-600: #d97706;
+  --color-text-primary: #f1f1f1;
+  --color-text-secondary: #a1a1a1;
+  --color-text-tertiary: #7a7a7a;
+  --color-text-muted: #555;
+  --color-live: #ef4444;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+@layer base {
+  * {
+    scrollbar-color: var(--color-bg-border) transparent;
+    scrollbar-width: thin;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background: var(--color-bg-base);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    margin: 0;
+  }
+  ::selection {
+    background: var(--color-brand-600);
+    color: white;
+  }
+}
+
+@layer utilities {
+  .text-title-1 { font-size: 1.75rem; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; }
+  .text-title-2 { font-size: 1.5rem; line-height: 1.25; font-weight: 600; letter-spacing: -0.015em; }
+  .text-title-3 { font-size: 1.25rem; line-height: 1.3; font-weight: 600; letter-spacing: -0.01em; }
+  .text-subtitle { font-size: 1.0625rem; line-height: 1.4; font-weight: 500; }
+  .text-small { font-size: 0.875rem; line-height: 1.5; font-weight: 400; }
+  .text-tiny { font-size: 0.75rem; line-height: 1.4; font-weight: 400; }
+  .text-caption { font-size: 0.6875rem; line-height: 1.3; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+  .text-gradient-brand {
+    background: linear-gradient(135deg, var(--color-brand-400), var(--color-ember-400));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-thin { scrollbar-width: thin; }
+}

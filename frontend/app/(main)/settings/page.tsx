@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/lib/auth-store';
 
 export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const router = useRouter();
 
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [bio, setBio] = useState('');
@@ -13,6 +16,10 @@ export default function SettingsPage() {
   const [autoplay, setAutoplay] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Creator conversion
+  const [showCreatorModal, setShowCreatorModal] = useState(false);
+  const [creatorMode, setCreatorMode] = useState<'convert' | 'separate' | null>(null);
 
   const handleSave = () => {
     setSaved(true);
@@ -231,6 +238,38 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* ── Creator Section ── */}
+        {isAuthenticated && (
+          <section>
+            <h2
+              className="text-subtitle mb-4"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              Creator
+            </h2>
+            <div
+              className="rounded-xl p-5 border space-y-4"
+              style={{
+                backgroundColor: 'var(--color-bg-raised)',
+                borderColor: 'var(--color-bg-border)',
+              }}
+            >
+              <p className="text-small" style={{ color: 'var(--color-text-secondary)' }}>
+                Stream live, upload VODs, build your audience. Your current account can become a creator account with a few clicks.
+              </p>
+              <button
+                onClick={() => setShowCreatorModal(true)}
+                className="w-full py-2.5 px-4 rounded-lg text-small font-semibold text-white transition-all hover:opacity-90"
+                style={{
+                  background: 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-400))',
+                }}
+              >
+                Become a Creator
+              </button>
+            </div>
+          </section>
+        )}
+
         {/* ── Account Section ── */}
         <section>
           <h2
@@ -294,6 +333,128 @@ export default function SettingsPage() {
           </div>
         </section>
       </div>
+
+      {/* ── Creator Conversion Modal ── */}
+      <AnimatePresence>
+        {showCreatorModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              backdropFilter: 'blur(8px)',
+            }}
+            onClick={() => setShowCreatorModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.97 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-md rounded-2xl p-6 border"
+              style={{
+                backgroundColor: 'var(--color-bg-raised)',
+                borderColor: 'var(--color-bg-border)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-title-2 mb-2" style={{ color: 'var(--color-text-primary)' }}>
+                Become a Creator
+              </h3>
+              <p className="text-small mb-6" style={{ color: 'var(--color-text-tertiary)' }}>
+                Choose how you want to start creating on Wiitoo.
+              </p>
+
+              <div className="space-y-3">
+                {/* Convert current */}
+                <button
+                  onClick={() => setCreatorMode('convert')}
+                  className="w-full text-left rounded-xl p-4 border transition-all"
+                  style={{
+                    backgroundColor: creatorMode === 'convert'
+                      ? 'rgba(124,58,237,0.08)'
+                      : 'transparent',
+                    borderColor: creatorMode === 'convert'
+                      ? 'rgba(124,58,237,0.3)'
+                      : 'var(--color-bg-border)',
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-title-3">🔄</span>
+                    <div>
+                      <p className="text-small font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                        Convert this account
+                      </p>
+                      <p className="text-tiny mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>
+                        Keep your followers, history, and subscriptions. Just add creator features like streaming and uploads.
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Separate creator */}
+                <button
+                  onClick={() => setCreatorMode('separate')}
+                  className="w-full text-left rounded-xl p-4 border transition-all"
+                  style={{
+                    backgroundColor: creatorMode === 'separate'
+                      ? 'rgba(124,58,237,0.08)'
+                      : 'transparent',
+                    borderColor: creatorMode === 'separate'
+                      ? 'rgba(124,58,237,0.3)'
+                      : 'var(--color-bg-border)',
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-title-3">✨</span>
+                    <div>
+                      <p className="text-small font-medium" style={{ color: 'var(--color-text-primary)' }}>
+                        Create a new creator account
+                      </p>
+                      <p className="text-tiny mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>
+                        A separate brand identity with its own name, followers, and stream keys. Linked to your viewer account.
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowCreatorModal(false)}
+                  className="flex-1 py-2.5 rounded-xl text-small font-medium"
+                  style={{
+                    border: '1px solid var(--color-bg-border)',
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCreatorModal(false);
+                    router.push('/studio');
+                  }}
+                  disabled={!creatorMode}
+                  className="flex-1 py-2.5 rounded-xl text-small font-semibold text-white transition-opacity"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-400))',
+                    opacity: creatorMode ? 1 : 0.4,
+                  }}
+                >
+                  {creatorMode === 'convert'
+                    ? 'Enable Creator'
+                    : creatorMode === 'separate'
+                      ? 'Create Account'
+                      : 'Select an option'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

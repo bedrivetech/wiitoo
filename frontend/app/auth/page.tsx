@@ -7,7 +7,7 @@ import { useAuthStore } from '@/lib/auth-store';
 import { EmberParticles } from '@/components/auth/ember-particles';
 
 /* ─── Types ─── */
-type AuthStep = 'login' | 'register-name' | 'register-email' | 'register-password' | 'verify' | 'welcome' | 'reset' | 'reset-verify' | 'reset-password';
+type AuthStep = 'login' | 'register-name' | 'register-email' | 'register-password' | 'verify' | 'welcome' | 'onboarding' | 'reset' | 'reset-verify' | 'reset-password';
 
 interface AuthContextType {
   step: AuthStep;
@@ -49,6 +49,7 @@ export default function AuthPage() {
               {step === 'register-password' && <RegisterPasswordStep key="reg-pw" />}
               {step === 'verify' && <OtpScreen key="otp" />}
               {step === 'welcome' && <WelcomeOverlay key="welcome" />}
+              {step === 'onboarding' && <OnboardingStep key="onboarding" />}
               {step === 'reset' && <ResetEmailStep key="reset" />}
               {step === 'reset-verify' && <ResetOtpStep key="reset-otp" />}
               {step === 'reset-password' && <ResetPasswordStep key="reset-pw" />}
@@ -341,7 +342,7 @@ function LoginScreen() {
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={setPassword}
-            placeholder="Enter your key"
+            placeholder="Enter your password"
           />
           <div className="flex items-center justify-between mt-1.5 px-1">
             <button
@@ -356,7 +357,7 @@ function LoginScreen() {
               className="text-tiny hover:underline"
               style={{ color: 'var(--color-brand-400)' }}
             >
-              Forgot your key?
+              Forgot your password?
             </button>
           </div>
         </div>
@@ -424,6 +425,46 @@ function LoginScreen() {
 function RegisterNameStep() {
   const { goTo, displayName, setDisplayName } = useAuthContext();
   const [error, setError] = useState('');
+  const [availability, setAvailability] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Mock taken usernames
+  const takenNames = new Set(['lunabeats', 'pixelrunner', 'techpulse', 'auravis', 'neonsphinx', 'cybervibes', 'stargazer']);
+
+  const generateSuggestions = (name: string): string[] => {
+    const base = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!base || base.length < 2) return [];
+    return [
+      `${base}.` + (base.endsWith('s') ? 'live' : 'stream'),
+      `${base}_` + Math.floor(Math.random() * 100),
+      `${base.slice(0, Math.ceil(base.length / 2))}.${base.slice(Math.ceil(base.length / 2))}`,
+      `the${base.charAt(0).toUpperCase() + base.slice(1)}`,
+    ];
+  };
+
+  const checkAvailability = useCallback((name: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!name.trim() || name.trim().length < 2) {
+      setAvailability('idle');
+      setSuggestions([]);
+      return;
+    }
+    setAvailability('checking');
+    debounceRef.current = setTimeout(() => {
+      const normalized = name.trim().toLowerCase();
+      const isTaken = takenNames.has(normalized);
+      setAvailability(isTaken ? 'taken' : 'available');
+      if (isTaken) setSuggestions(generateSuggestions(name.trim()));
+      else setSuggestions([]);
+    }, 600);
+  }, []);
+
+  const handleNameChange = (v: string) => {
+    setDisplayName(v);
+    setError('');
+    checkAvailability(v);
+  };
 
   const handleNext = () => {
     if (!displayName.trim()) {
@@ -432,6 +473,10 @@ function RegisterNameStep() {
     }
     if (displayName.trim().length < 2) {
       setError('At least 2 characters for your name.');
+      return;
+    }
+    if (availability === 'taken') {
+      setError('That name is taken. Try one of the suggestions below.');
       return;
     }
     goTo('register-email');
@@ -455,15 +500,104 @@ function RegisterNameStep() {
       </motion.p>
 
       <div className="space-y-4">
-        <AuthInput
-          label="Display Name"
-          value={displayName}
-          onChange={(v) => { setDisplayName(v); setError(''); }}
-          placeholder="e.g. PixelRunner, LunaBeats..."
-          hint="You can change this later."
-          error={error}
-          autoFocus
-        />
+        <div className="relative">
+          <AuthInput
+            label="Display Name"
+            value={displayName}
+            onChange={handleNameChange}
+            placeholder="e.g. PixelRunner, LunaBeats..."
+            hint="This is your identity here — choose something you love."
+            error={error}
+            autoFocus
+          />
+          {/* Availability indicator */}
+          {displayName.trim().length >= 2 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute right-3 top-[38px]"
+            >
+              {availability === 'checking' && (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  className="w-4 h-4 border-2 rounded-full"
+                  style={{
+                    borderColor: 'var(--color-bg-border)',
+                    borderTopColor: 'var(--color-brand-400)',
+                  }}
+                />
+              )}
+              {availability === 'available' && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                  style={{ color: 'var(--color-success)' }}
+                >
+                  ✓
+                </motion.span>
+              )}
+              {availability === 'taken' && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  style={{ color: 'var(--color-warning)' }}
+                >
+                  ✕
+                </motion.span>
+              )}
+            </motion.div>
+          )}
+        </div>
+
+        {/* Suggestions */}
+        {availability === 'taken' && suggestions.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-lg p-3 border"
+            style={{
+              backgroundColor: 'rgba(245, 158, 11, 0.06)',
+              borderColor: 'rgba(245, 158, 11, 0.15)',
+            }}
+          >
+            <p className="text-tiny mb-2" style={{ color: 'var(--color-text-tertiary)' }}>
+              {displayName.trim()} is taken. Try one of these:
+            </p>
+            <div className="space-y-1.5">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    setDisplayName(s);
+                    setAvailability('idle');
+                    setSuggestions([]);
+                  }}
+                  className="block w-full text-left px-2.5 py-1.5 rounded-md text-small font-medium transition-all hover:translate-x-1"
+                  style={{
+                    color: 'var(--color-brand-400)',
+                    backgroundColor: 'rgba(124,58,237,0.06)',
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Availability hint */}
+        {availability === 'available' && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-tiny"
+            style={{ color: 'var(--color-success)' }}
+          >
+            {displayName.trim()} is available!
+          </motion.p>
+        )}
 
         <PrimaryButton onClick={handleNext}>
           Continue
@@ -593,7 +727,7 @@ function RegisterPasswordStep() {
         className="text-title-2 text-center mb-1"
         style={{ color: 'var(--color-text-primary)' }}
       >
-        One last thing — choose a key
+        One last thing — your password
       </motion.h2>
       <motion.p
         className="text-small text-center mb-8"
@@ -617,7 +751,7 @@ function RegisterPasswordStep() {
               type="password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
-              placeholder="Create your key"
+              placeholder="Create your password"
               autoFocus
               className="relative w-full px-3.5 py-3 rounded-lg text-small outline-none bg-transparent"
               style={{
@@ -914,18 +1048,17 @@ function OtpScreen() {
    WELCOME OVERLAY
    ================================================================== */
 function WelcomeOverlay() {
-  const router = useRouter();
-  const { displayName, email } = useAuthContext();
+  const { goTo, displayName, email } = useAuthContext();
   const user = useAuthStore((s) => s.user);
 
   const name = displayName || user?.displayName || 'friend';
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push('/');
+      goTo('onboarding');
     }, 2800);
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [goTo]);
 
   return (
     <motion.div
@@ -988,6 +1121,154 @@ function WelcomeOverlay() {
 }
 
 /* ==================================================================
+   ONBOARDING — Interest Selection (after Welcome)
+   ================================================================== */
+function OnboardingStep() {
+  const router = useRouter();
+  const [selected, setSelected] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const categories = [
+    { id: 'music', name: 'Music', icon: '🎵', desc: 'Live sets, production, instrumentals' },
+    { id: 'gaming', name: 'Gaming', icon: '🎮', desc: 'Live plays, esports, walkthroughs' },
+    { id: 'creative', name: 'Creative Arts', icon: '🎨', desc: 'Drawing, design, 3D, crafts' },
+    { id: 'tech', name: 'Tech', icon: '💻', desc: 'Coding, reviews, hardware' },
+    { id: 'sports', name: 'Sports & Fitness', icon: '🏋️', desc: 'Workouts, analysis, outdoor' },
+    { id: 'talk-shows', name: 'Talk Shows', icon: '🎙️', desc: 'Interviews, discussions, podcasts' },
+    { id: 'education', name: 'Education', icon: '📚', desc: 'Tutorials, lectures, science' },
+    { id: 'entertainment', name: 'Entertainment', icon: '🎬', desc: 'Reaction, comedy, variety' },
+  ];
+
+  const toggle = (id: string) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  };
+
+  const completeOnboarding = async () => {
+    setLoading(true);
+    // Mock: save interests
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wiitoo-interests', JSON.stringify(selected));
+    }
+    await new Promise((r) => setTimeout(r, 400));
+    router.push('/');
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full"
+    >
+      <GlassCard className="!p-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-center mb-6"
+        >
+          <span className="text-title-2 font-bold text-gradient-brand">wiitoo</span>
+        </motion.div>
+
+        <motion.h2
+          className="text-title-2 text-center mb-1"
+          style={{ color: 'var(--color-text-primary)' }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          What are you into?
+        </motion.h2>
+        <motion.p
+          className="text-small text-center mb-6"
+          style={{ color: 'var(--color-text-tertiary)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          Pick at least 3 — we&apos;ll fill your feed with things you love.
+        </motion.p>
+
+        <div className="grid grid-cols-2 gap-2.5 mb-6 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin">
+          {categories.map((cat, i) => {
+            const isSelected = selected.includes(cat.id);
+            return (
+              <motion.button
+                key={cat.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 + i * 0.05, duration: 0.3 }}
+                onClick={() => toggle(cat.id)}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                className="relative rounded-xl p-3 text-left transition-all"
+                style={{
+                  backgroundColor: isSelected
+                    ? 'rgba(124, 58, 237, 0.1)'
+                    : 'var(--color-bg-raised)',
+                  border: isSelected
+                    ? '1.5px solid rgba(124, 58, 237, 0.3)'
+                    : '1px solid var(--color-bg-border)',
+                  boxShadow: isSelected
+                    ? '0 0 16px -6px rgba(124, 58, 237, 0.2)'
+                    : 'none',
+                }}
+              >
+                <span className="text-title-3 block mb-1">{cat.icon}</span>
+                <p
+                  className="text-small font-medium"
+                  style={{ color: isSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)' }}
+                >
+                  {cat.name}
+                </p>
+                <p className="text-tiny mt-0.5 line-clamp-1" style={{ color: 'var(--color-text-muted)' }}>
+                  {cat.desc}
+                </p>
+                {isSelected && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--color-brand-600)' }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </motion.div>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+
+        <PrimaryButton
+          onClick={completeOnboarding}
+          loading={loading}
+          disabled={selected.length < 3}
+          className={selected.length < 3 ? 'opacity-40 cursor-not-allowed' : ''}
+        >
+          {selected.length < 3
+            ? 'Pick ' + (3 - selected.length) + ' more'
+            : 'Start exploring →'}
+        </PrimaryButton>
+
+        <motion.p
+          className="text-center mt-3 text-tiny"
+          style={{ color: 'var(--color-text-muted)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+        >
+          You can always change this later in settings.
+        </motion.p>
+      </GlassCard>
+    </motion.div>
+  );
+}
+
+/* ==================================================================
    PASSWORD RESET — STEP 1: Email
    ================================================================== */
 function ResetEmailStep() {
@@ -1018,7 +1299,7 @@ function ResetEmailStep() {
       </div>
 
       <h1 className="text-title-2 text-center mb-1" style={{ color: 'var(--color-text-primary)' }}>
-        Forgot your key?
+        Forgot your password?
       </h1>
       <p className="text-small text-center mb-8" style={{ color: 'var(--color-text-tertiary)' }}>
         No worries. Enter your email and we&apos;ll send a code.
@@ -1184,7 +1465,7 @@ function ResetPasswordStep() {
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
         </svg>
       </div>
-      <h1 className="text-title-2 text-center mb-1" style={{ color: 'var(--color-text-primary)' }}>Choose a new key</h1>
+      <h1 className="text-title-2 text-center mb-1" style={{ color: 'var(--color-text-primary)' }}>Choose a new password</h1>
       <p className="text-small text-center mb-8" style={{ color: 'var(--color-text-tertiary)' }}>At least 6 characters. Make it yours.</p>
 
       <div className="space-y-4">
@@ -1193,7 +1474,7 @@ function ResetPasswordStep() {
           <input
             type="password" value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Create your new key" autoFocus
+            placeholder="Create your new password" autoFocus
             className="w-full px-3.5 py-3 rounded-lg text-small outline-none"
             style={{
               backgroundColor: 'var(--color-bg-base)',
