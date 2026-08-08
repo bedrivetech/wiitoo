@@ -14,15 +14,6 @@ interface UiState {
   /* Comment sort */
   commentSort: 'top' | 'new' | 'timeline';
   setCommentSort: (sort: 'top' | 'new' | 'timeline') => void;
-
-  /* Theatre mode (watch page) */
-  theatreMode: boolean;
-  setTheatreMode: (on: boolean) => void;
-  toggleTheatreMode: () => void;
-
-  /* Video ended state */
-  videoEnded: boolean;
-  setVideoEnded: (ended: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -36,11 +27,4 @@ export const useUiStore = create<UiState>((set) => ({
 
   commentSort: 'top',
   setCommentSort: (sort) => set({ commentSort: sort }),
-
-  theatreMode: false,
-  setTheatreMode: (on) => set({ theatreMode: on }),
-  toggleTheatreMode: () => set((s) => ({ theatreMode: !s.theatreMode })),
-
-  videoEnded: false,
-  setVideoEnded: (ended) => set({ videoEnded: ended }),
 }));
