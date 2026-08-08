@@ -11,6 +11,8 @@ interface WiitooPlayerProps {
   isLive?: boolean;
   title?: string;
   liveViewers?: number;
+  onEnded?: () => void;
+  onPlay?: () => void;
 }
 
 export function WiitooPlayer({
@@ -19,6 +21,8 @@ export function WiitooPlayer({
   isLive = false,
   title,
   liveViewers,
+  onEnded,
+  onPlay,
 }: WiitooPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
@@ -67,10 +71,17 @@ export function WiitooPlayer({
       setPlaying(true);
       setIsLoading(false);
       hideControlsAfterDelay();
+      onPlay?.();
     });
     player.on('pause', () => {
       setPlaying(false);
       setShowControls(true);
+    });
+
+    player.on('ended', () => {
+      setPlaying(false);
+      setShowControls(true);
+      onEnded?.();
     });
     player.on('waiting', () => setIsLoading(true));
     player.on('canplay', () => setIsLoading(false));
@@ -424,14 +435,19 @@ export function WiitooPlayer({
               </button>
             )}
 
+            {/* Theatre mode toggle */}
             <button
-              onClick={() => {}}
+              onClick={() => {
+                // Send custom event for the parent to handle
+                window.dispatchEvent(new CustomEvent('wiitoo:toggle-theatre'));
+              }}
               className="text-white/60 hover:text-white transition-colors p-1.5"
-              aria-label="Settings"
+              aria-label="Theatre mode"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
               </svg>
             </button>
 

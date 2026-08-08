@@ -8,6 +8,8 @@ import { InfoRow } from '@/components/watch/info-row';
 import { Description } from '@/components/watch/description';
 import { CommentsSection } from '@/components/watch/comments-section';
 import { ChatDrawer } from '@/components/watch/chat-drawer';
+import { StandingOvation } from '@/components/watch/standing-ovation';
+import { CurtainCall } from '@/components/watch/curtain-call';
 import { useUiStore } from '@/lib/store';
 import type { WatchPageData, ChatMessage } from '@/lib/types';
 
@@ -243,6 +245,10 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
   const comments = MOCK_DATA.comments;
   const isChatOpen = useUiStore((s) => s.isChatOpen);
   const closeChat = useUiStore((s) => s.closeChat);
+  const theatreMode = useUiStore((s) => s.theatreMode);
+  const toggleTheatreMode = useUiStore((s) => s.toggleTheatreMode);
+  const videoEnded = useUiStore((s) => s.videoEnded);
+  const setVideoEnded = useUiStore((s) => s.setVideoEnded);
 
   /* ── Mini-player state ── */
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -260,12 +266,37 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    /* Listen for theatre mode toggle from player controls */
+    const handleTheatreToggle = () => toggleTheatreMode();
+    window.addEventListener('wiitoo:toggle-theatre', handleTheatreToggle);
+
+    /* Reset video ended on mount */
+    setVideoEnded(false);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wiitoo:toggle-theatre', handleTheatreToggle);
+    };
   }, []);
 
   const handleSeekTo = useCallback((seconds: number) => {
     console.log('Seek to:', seconds);
   }, []);
+
+  const handleVideoEnded = useCallback(() => {
+    setVideoEnded(true);
+  }, []);
+
+  const handleVideoPlay = useCallback(() => {
+    setVideoEnded(false);
+  }, []);
+
+  const handleDismissCurtain = useCallback(() => {
+    setVideoEnded(false);
+  }, []);
+
+
 
   return (
     <div className="min-h-screen bg-bg-base">
@@ -294,18 +325,57 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
       </header>
 
       {/* ── Player + Content layout ── */}
-      <main className="mx-auto max-w-[1360px]">
+      {/* ── Theatre mode ambient glow ── */}
+      {theatreMode && (
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <div
+            className="absolute inset-0 opacity-30"
+            style={{
+              background: `
+                radial-gradient(ellipse at 50% 20%, rgba(124,58,237,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 30% 80%, rgba(245,158,11,0.04) 0%, transparent 50%)
+              `,
+            }}
+          />
+        </div>
+      )}
+
+      {/* ── Theatre mode: full-width player with darkened sides ── */}
+      <div className={`transition-all duration-500 ${theatreMode ? 'bg-black/80' : ''}`}>
+      <main className={`mx-auto transition-all duration-500 ${theatreMode ? 'max-w-none' : 'max-w-[1360px]'}`}>
         {/* Player area */}
         <div ref={playerContainerRef} className="relative">
           <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
-            <div className="px-0 md:px-6 pt-0 md:pt-6">
-              <WiitooPlayer
-                src={video.hlsUrl}
-                poster={video.posterUrl}
-                isLive={video.isLive}
-                title={video.title}
-                liveViewers={video.liveViewers}
-              />
+            <div className={`px-0 transition-all duration-500 ${
+              theatreMode ? 'md:px-0' : 'md:px-6'
+            } pt-0 md:pt-6`}>
+              <div className={`relative transition-all duration-500 ${
+                theatreMode ? 'rounded-none md:rounded-none' : 'rounded-xl'
+              } overflow-hidden`}>
+                <WiitooPlayer
+                  src={video.hlsUrl}
+                  poster={video.posterUrl}
+                  isLive={video.isLive}
+                  title={video.title}
+                  liveViewers={video.liveViewers}
+                  onEnded={handleVideoEnded}
+                  onPlay={handleVideoPlay}
+                />
+                {/* Curtain Call overlay */}
+                <CurtainCall
+                  visible={videoEnded}
+                  title={video.title}
+                  creatorName={video.creator.displayName}
+                  creatorUsername={video.creator.username}
+                />
+                {/* Click to dismiss curtain */}
+                {videoEnded && (
+                  <div
+                    className="absolute inset-0 z-20 cursor-pointer"
+                    onClick={handleDismissCurtain}
+                  />
+                )}
+              </div>
             </div>
           </div>
 
@@ -331,6 +401,9 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
               likes={video.likes}
               publishedAt={video.publishedAt}
             />
+            <div className="px-4 md:px-0 pb-2">
+              <StandingOvation count={video.likes} />
+            </div>
             <Description text={video.description} />
             <CommentsSection
               comments={comments}
@@ -340,6 +413,7 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
           </div>
         </div>
       </main>
+    </div>{/* ── end theatre wrapper ── */}
 
       {/* ── Floating Mini-Player ── */}
       <AnimatePresence>
