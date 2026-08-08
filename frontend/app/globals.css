@@ -280,3 +280,78 @@ input[type="range"]:hover::-webkit-slider-thumb {
   background: rgba(11, 11, 11, 0.88);
   border-left: 1px solid var(--color-bg-border);
 }
+
+/* ─── Content Card Hover ─── */
+.content-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.content-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.content-card:active {
+  transform: translateY(0px);
+}
+
+/* ─── Exclusive Card Glow ─── */
+.content-card-exclusive {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.content-card-exclusive:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-brand-500) 30%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-brand-500) 15%, transparent),
+    0 8px 24px color-mix(in srgb, var(--color-brand-500) 8%, transparent);
+}
+
+/* ─── Category Pill ─── */
+.category-pill {
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.category-pill:hover {
+  transform: translateY(-1px);
+}
+
+/* ─── Button Press ─── */
+.btn-press {
+  transition: transform 0.1s ease;
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* ─── Skeleton Shimmer ─── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-raised) 25%,
+    var(--color-bg-hover) 37%,
+    var(--color-bg-raised) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* ─── Card Enter Animation ─── */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-card-enter {
+  animation: card-enter 0.35s ease both;
+}
+.animate-card-enter:nth-child(2n) { animation-delay: 0.05s; }
+.animate-card-enter:nth-child(3n) { animation-delay: 0.1s; }
+.animate-card-enter:nth-child(4n) { animation-delay: 0.15s; }
+.animate-card-enter:nth-child(5n) { animation-delay: 0.2s; }

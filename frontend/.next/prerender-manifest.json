@@ -5,7 +5,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 11959,
+      "htmlSize": 40256,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -86,11 +86,11 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/browse": {
+    "/search": {
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 40768,
+      "htmlSize": 13704,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -103,8 +103,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/browse",
-      "dataRoute": "/browse.rsc",
+      "srcRoute": "/search",
+      "dataRoute": "/search.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",

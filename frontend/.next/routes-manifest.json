@@ -67,10 +67,10 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
-      "page": "/browse",
-      "regex": "^/browse(?:/)?$",
+      "page": "/search",
+      "regex": "^/search(?:/)?$",
       "routeKeys": {},
-      "namedRegex": "^/browse(?:/)?$"
+      "namedRegex": "^/search(?:/)?$"
     }
   ],
   "dataRoutes": [],

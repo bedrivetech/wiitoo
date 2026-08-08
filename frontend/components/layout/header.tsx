@@ -1,12 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import CategoriesBar from '@/components/browse/categories-bar';
 
 export default function Header() {
   const pathname = usePathname();
-  const isBrowse = pathname.startsWith('/browse') || pathname.startsWith('/creator');
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const isBrowse =
+    pathname === '/' ||
+    pathname.startsWith('/browse') ||
+    pathname.startsWith('/creator') ||
+    pathname.startsWith('/search');
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (q) {
+      router.push(`/search?q=${encodeURIComponent(q)}`);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-bg-base/80 backdrop-blur-lg border-b border-bg-border">
@@ -14,7 +30,7 @@ export default function Header() {
         <div className="flex items-center h-12 gap-4">
           {/* Logo */}
           <Link
-            href="/browse"
+            href="/"
             className="flex items-center gap-1.5 flex-shrink-0"
           >
             <span
@@ -35,7 +51,7 @@ export default function Header() {
           <div className="flex-1" />
 
           {/* Search */}
-          <div className="hidden sm:flex items-center max-w-xs w-full">
+          <form onSubmit={handleSearchSubmit} className="hidden sm:flex items-center max-w-xs w-full">
             <div className="relative w-full">
               <svg
                 width="14"
@@ -52,10 +68,12 @@ export default function Header() {
               <input
                 type="search"
                 placeholder="Search Wiitoo..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 text-small bg-bg-inset border border-bg-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-brand-600/40 transition-colors"
               />
             </div>
-          </div>
+          </form>
 
           {/* Nav actions */}
           <div className="flex items-center gap-1">
@@ -99,7 +117,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Categories bar */}
+        {/* Categories bar — show on browse, search, home */}
         {isBrowse && (
           <div className="pb-2 -mx-1 px-1">
             <CategoriesBar />

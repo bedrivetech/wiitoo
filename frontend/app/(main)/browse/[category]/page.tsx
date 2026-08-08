@@ -24,8 +24,8 @@ export default function CategoryPage({
     <div className="max-w-[1440px] mx-auto px-4 py-5">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-small text-text-tertiary mb-6">
-        <Link href="/browse" className="hover:text-text-secondary transition-colors">
-          Browse
+        <Link href="/" className="hover:text-text-secondary transition-colors">
+          Home
         </Link>
         <span className="text-text-disabled">/</span>
         <span className="text-text-primary">{cat?.label ?? slug}</span>

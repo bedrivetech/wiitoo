@@ -22,7 +22,21 @@
       }
     }
   },
-  "/browse": {
+  "/": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 160,
+            "slots": null
+          }
+        }
+      }
+    }
+  },
+  "/search": {
     "hints": 64,
     "slots": {
       "children": {
@@ -38,15 +52,6 @@
             }
           }
         }
-      }
-    }
-  },
-  "/": {
-    "hints": 64,
-    "slots": {
-      "children": {
-        "hints": 160,
-        "slots": null
       }
     }
   }

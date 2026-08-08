@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUiStore } from '@/lib/store';
 import type { ChatMessage } from '@/lib/types';
@@ -20,7 +20,6 @@ function ChatMessageItem({ msg }: { msg: ChatMessage }) {
   return (
     <div className={`animate-slide-up ${msg.isSuperchat ? 'gradient-ember-horizontal rounded-lg px-2 -mx-2' : ''}`}>
       <div className="flex items-start gap-1.5">
-        {/* Badge/role indicator */}
         <span
           className={`shrink-0 text-tiny font-semibold ${
             msg.badge === 'exclusive'
@@ -32,14 +31,11 @@ function ChatMessageItem({ msg }: { msg: ChatMessage }) {
         >
           {msg.displayName}
         </span>
-
-        {/* Superchat indicator */}
         {msg.isSuperchat && msg.superchatAmount && (
           <span className="shrink-0 text-tiny font-bold text-ember-400">
             ${msg.superchatAmount}
           </span>
         )}
-
         <span className="text-small text-text-secondary break-words">
           {msg.text}
         </span>
@@ -54,11 +50,26 @@ export function ChatDrawer() {
   const toggleChat = useUiStore((s) => s.toggleChat);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Scroll to bottom when chat opens — with a delay to let the slide animation finish
   useEffect(() => {
     if (isChatOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 350); // matches framer-motion spring damping
+      return () => clearTimeout(timer);
     }
   }, [isChatOpen]);
+
+  // Also scroll when new messages arrive (in future when wired to WebSocket)
+  const [messages] = useState(MOCK_CHAT);
+  useEffect(() => {
+    if (isChatOpen) {
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [messages.length, isChatOpen]);
 
   return (
     <AnimatePresence>
@@ -104,7 +115,7 @@ export function ChatDrawer() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
-              {MOCK_CHAT.map((msg) => (
+              {messages.map((msg) => (
                 <ChatMessageItem key={msg.id} msg={msg} />
               ))}
               <div ref={messagesEndRef} />

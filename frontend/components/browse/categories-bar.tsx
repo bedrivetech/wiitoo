@@ -14,7 +14,7 @@ export default function CategoriesBar() {
   return (
     <nav className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
       <Link
-        href="/browse"
+        href="/"
         className={`px-3 py-1.5 text-small font-medium rounded-lg whitespace-nowrap transition-colors ${
           !activeSlug
             ? 'bg-text-primary text-bg-base'
