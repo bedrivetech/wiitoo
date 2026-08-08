@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef } from 'react';
+import gsap from 'gsap';
+import { useGsapMount } from '@/lib/animations';
 
 export default function StreamKeysPage() {
   const [streamKey] = useState(() =>
@@ -12,6 +13,10 @@ export default function StreamKeysPage() {
   const [rtmpUrl] = useState('rtmp://ingest.wiitoo.com/live');
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState<'key' | 'url' | null>(null);
+
+  const urlRef = useGsapMount(0);
+  const keyRef = useGsapMount(0.1);
+  const instrRef = useGsapMount(0.2);
 
   const copy = async (val: string, type: 'key' | 'url') => {
     await navigator.clipboard.writeText(val);
@@ -31,10 +36,7 @@ export default function StreamKeysPage() {
       </div>
 
       {/* RTMP URL */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl p-5 border"
+      <div ref={urlRef} className="rounded-xl p-5 border"
         style={{
           backgroundColor: 'var(--color-bg-raised)',
           borderColor: 'var(--color-bg-border)',
@@ -65,14 +67,10 @@ export default function StreamKeysPage() {
             {copied === 'url' ? 'Copied!' : 'Copy'}
           </button>
         </div>
-      </motion.div>
+      </div>
 
       {/* Stream Key */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="rounded-xl p-5 border"
+      <div ref={keyRef} className="rounded-xl p-5 border"
         style={{
           backgroundColor: 'var(--color-bg-raised)',
           borderColor: 'var(--color-bg-border)',
@@ -131,14 +129,10 @@ export default function StreamKeysPage() {
         >
           Reset Stream Key
         </button>
-      </motion.div>
+      </div>
 
       {/* Instructions */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="rounded-xl p-5 border"
+      <div ref={instrRef} className="rounded-xl p-5 border"
         style={{
           backgroundColor: 'var(--color-bg-raised)',
           borderColor: 'var(--color-bg-border)',
@@ -154,7 +148,7 @@ export default function StreamKeysPage() {
           <p>4. Paste the <strong>RTMP URL</strong> and <strong>Stream Key</strong> from above.</p>
           <p>5. Click <strong>Start Streaming</strong> — you'll be live on Wiitoo.</p>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

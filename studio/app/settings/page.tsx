@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef } from 'react';
+import gsap from 'gsap';
+import { useGsapMount } from '@/lib/animations';
 
 export default function StudioSettingsPage() {
   const [displayName, setDisplayName] = useState('Your Name');
@@ -9,6 +10,10 @@ export default function StudioSettingsPage() {
   const [category, setCategory] = useState('tech');
   const [twitter, setTwitter] = useState('');
   const [discord, setDiscord] = useState('');
+
+  const profileRef = useGsapMount(0);
+  const socialRef = useGsapMount(0.1);
+  const saveRef = useGsapMount(0.2);
 
   return (
     <div className="space-y-8">
@@ -22,10 +27,7 @@ export default function StudioSettingsPage() {
       </div>
 
       {/* Profile */}
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl p-6 border"
+      <section ref={profileRef} className="rounded-xl p-6 border"
         style={{
           backgroundColor: 'var(--color-bg-raised)',
           borderColor: 'var(--color-bg-border)',
@@ -92,14 +94,10 @@ export default function StudioSettingsPage() {
             </select>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* Social Links */}
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="rounded-xl p-6 border"
+      <section ref={socialRef} className="rounded-xl p-6 border"
         style={{
           backgroundColor: 'var(--color-bg-raised)',
           borderColor: 'var(--color-bg-border)',
@@ -144,14 +142,10 @@ export default function StudioSettingsPage() {
             />
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* Save */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
+      <div ref={saveRef}>
         <button
           className="px-6 py-2.5 rounded-lg text-small font-semibold text-white transition-all hover:opacity-90"
           style={{
@@ -160,7 +154,7 @@ export default function StudioSettingsPage() {
         >
           Save Changes
         </button>
-      </motion.div>
+      </div>
     </div>
   );
 }

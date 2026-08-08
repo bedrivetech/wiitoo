@@ -1,6 +1,8 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import gsap from 'gsap';
+import { useGsapMount, useGsapStagger } from '@/lib/animations';
 
 export default function VodPage() {
   const vods = [
@@ -9,6 +11,9 @@ export default function VodPage() {
     { title: 'React Server Components deep dive', date: 'March 3, 2026', views: 2103, duration: '1:12:08', status: 'Published' as const },
     { title: 'Unboxing new gear + first impressions', date: 'Feb 28, 2026', views: 421, duration: '0:34:22', status: 'Processing' as const },
   ];
+
+  const uploadRef = useGsapMount(0);
+  const listRef = useGsapStagger('[data-vod]', 0, 0.06);
 
   return (
     <div className="space-y-6">
@@ -32,10 +37,7 @@ export default function VodPage() {
       </div>
 
       {/* Upload Area */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl border-2 border-dashed p-10 text-center"
+      <div ref={uploadRef} className="rounded-xl border-2 border-dashed p-10 text-center"
         style={{
           borderColor: 'var(--color-bg-border)',
           backgroundColor: 'var(--color-bg-raised)',
@@ -59,16 +61,14 @@ export default function VodPage() {
         <p className="text-tiny mt-1" style={{ color: 'var(--color-text-muted)' }}>
           MP4, MOV, or WebM. Up to 4GB. 4K supported.
         </p>
-      </motion.div>
+      </div>
 
       {/* VOD List */}
-      <div className="space-y-2">
-        {vods.map((vod, i) => (
-          <motion.div
+      <div ref={listRef} className="space-y-2">
+        {vods.map((vod) => (
+          <div
             key={vod.title}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
+            data-vod
             className="flex items-center gap-4 rounded-xl p-4 border"
             style={{
               backgroundColor: 'var(--color-bg-raised)',
@@ -127,7 +127,7 @@ export default function VodPage() {
             >
               Edit
             </button>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>

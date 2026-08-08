@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import gsap from 'gsap';
+import { useGsapMount, useGsapStagger } from '@/lib/animations';
 
 export default function StudioDashboard() {
   const [time, setTime] = useState(new Date());
@@ -24,10 +25,14 @@ export default function StudioDashboard() {
     { title: 'React vs Vue — honest take', date: '1 week ago', views: 523, revenue: '$67.30', clips: 5 },
   ];
 
+  const statsGridRef = useGsapStagger('[data-card]', 0, 0.08);
+  const quickStartRef = useGsapMount(0.3);
+  const recentRef = useGsapMount(0.35);
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
+      <div data-entrance>
         <h1 className="text-title-2" style={{ color: 'var(--color-text-primary)' }}>
           Dashboard
         </h1>
@@ -37,13 +42,11 @@ export default function StudioDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <motion.div
+      <div ref={statsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat) => (
+          <div
             key={stat.label}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            data-card
             className="rounded-xl p-5 border"
             style={{
               backgroundColor: 'var(--color-bg-raised)',
@@ -70,18 +73,14 @@ export default function StudioDashboard() {
                 </span>
               )}
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Go Live */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="rounded-xl p-6 border"
+        <div ref={quickStartRef} className="rounded-xl p-6 border"
           style={{
             backgroundColor: 'var(--color-bg-raised)',
             borderColor: 'var(--color-bg-border)',
@@ -123,14 +122,10 @@ export default function StudioDashboard() {
               Stream Settings
             </button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Recent Streams */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="rounded-xl p-6 border"
+        <div ref={recentRef} className="rounded-xl p-6 border"
           style={{
             backgroundColor: 'var(--color-bg-raised)',
             borderColor: 'var(--color-bg-border)',
@@ -160,7 +155,7 @@ export default function StudioDashboard() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import gsap from 'gsap';
+import { useGsapMount, useGsapStagger } from '@/lib/animations';
 
 export default function ModerationPage() {
   const [banWords, setBanWords] = useState('spam, scam, discord.gg/');
@@ -10,6 +11,35 @@ export default function ModerationPage() {
   const [followerMinutes, setFollowerMinutes] = useState(10);
   const [slowMode, setSlowMode] = useState(false);
   const [slowSeconds, setSlowSeconds] = useState(5);
+
+  const filtersRef = useGsapMount(0);
+  const modsRef = useGsapMount(0.1);
+  const saveRef = useGsapMount(0.2);
+  const slowRevealRef = useRef<HTMLDivElement>(null);
+  const toggleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  useEffect(() => {
+    if (!slowRevealRef.current) return;
+    gsap.to(slowRevealRef.current, {
+      height: slowMode ? 'auto' : 0,
+      opacity: slowMode ? 1 : 0,
+      duration: 0.35,
+      ease: 'power2.out',
+      overwrite: 'auto',
+    });
+  }, [slowMode]);
+
+  const setToggleRef = (key: string) => (el: HTMLDivElement | null) => {
+    if (el) toggleRefs.current.set(key, el);
+    else toggleRefs.current.delete(key);
+  };
+
+  useEffect(() => {
+    toggleRefs.current.forEach((el, key) => {
+      const on = key === 'emote' ? emoteOnly : key === 'follower' ? followerOnly : slowMode;
+      gsap.to(el, { left: on ? 22 : 4, duration: 0.25, ease: 'back.out(1.7)', overwrite: 'auto' });
+    });
+  }, [emoteOnly, followerOnly, slowMode]);
 
   return (
     <div className="space-y-8">
@@ -23,10 +53,7 @@ export default function ModerationPage() {
       </div>
 
       {/* Chat Filters */}
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl p-6 border space-y-5"
+      <section ref={filtersRef} className="rounded-xl p-6 border space-y-5"
         style={{ backgroundColor: 'var(--color-bg-raised)', borderColor: 'var(--color-bg-border)' }}
       >
         <h2 className="text-subtitle" style={{ color: 'var(--color-text-primary)' }}>
@@ -53,14 +80,14 @@ export default function ModerationPage() {
 
         {/* Toggles */}
         <div className="space-y-4">
-          <ToggleItem label="Emote-only Mode" desc="Only emotes and long-time users can chat" enabled={emoteOnly} onChange={setEmoteOnly} />
-          <ToggleItem label="Follower-only Mode" desc="Only followers can chat" enabled={followerOnly} onChange={setFollowerOnly} />
-          <ToggleItem label="Slow Mode" desc="Limit how often users can send messages" enabled={slowMode} onChange={setSlowMode} />
+          <ToggleItem label="Emote-only Mode" desc="Only emotes and long-time users can chat" enabled={emoteOnly} onChange={setEmoteOnly} toggleRef={setToggleRef('emote')} />
+          <ToggleItem label="Follower-only Mode" desc="Only followers can chat" enabled={followerOnly} onChange={setFollowerOnly} toggleRef={setToggleRef('follower')} />
+          <ToggleItem label="Slow Mode" desc="Limit how often users can send messages" enabled={slowMode} onChange={setSlowMode} toggleRef={setToggleRef('slow')} />
         </div>
 
         {/* Slow mode seconds */}
-        {slowMode && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+        <div ref={slowRevealRef} className="overflow-hidden" style={{ height: 0, opacity: 0 }}>
+          <div>
             <label className="block text-tiny uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
               Slow Mode Interval
             </label>
@@ -78,16 +105,12 @@ export default function ModerationPage() {
                 {slowSeconds}s
               </span>
             </div>
-          </motion.div>
-        )}
-      </motion.section>
+          </div>
+        </div>
+      </section>
 
       {/* Moderators */}
-      <motion.section
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="rounded-xl p-6 border"
+      <section ref={modsRef} className="rounded-xl p-6 border"
         style={{ backgroundColor: 'var(--color-bg-raised)', borderColor: 'var(--color-bg-border)' }}
       >
         <h2 className="text-subtitle mb-4" style={{ color: 'var(--color-text-primary)' }}>
@@ -110,23 +133,23 @@ export default function ModerationPage() {
         <p className="text-tiny mt-3 px-1" style={{ color: 'var(--color-text-muted)' }}>
           Moderators can delete messages, timeout users, and manage bans during your streams.
         </p>
-      </motion.section>
+      </section>
 
       {/* Save */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+      <div ref={saveRef}>
         <button
           className="px-6 py-2.5 rounded-lg text-small font-semibold text-white transition-all hover:opacity-90"
           style={{ background: 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-400))' }}
         >
           Save Moderation Settings
         </button>
-      </motion.div>
+      </div>
     </div>
   );
 }
 
-function ToggleItem({ label, desc, enabled, onChange }: {
-  label: string; desc: string; enabled: boolean; onChange: (v: boolean) => void;
+function ToggleItem({ label, desc, enabled, onChange, toggleRef: setRef }: {
+  label: string; desc: string; enabled: boolean; onChange: (v: boolean) => void; toggleRef: (el: HTMLDivElement | null) => void;
 }) {
   return (
     <div className="flex items-center justify-between py-2">
@@ -145,10 +168,10 @@ function ToggleItem({ label, desc, enabled, onChange }: {
           backgroundColor: enabled ? 'var(--color-brand-500)' : 'var(--color-bg-border)',
         }}
       >
-        <motion.div
+        <div
+          ref={setRef}
           className="w-4 h-4 rounded-full bg-white absolute top-1"
-          animate={{ left: enabled ? 22 : 4 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          style={{ left: enabled ? 22 : 4 }}
         />
       </button>
     </div>

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
 
 export default function StudioShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -144,10 +143,6 @@ function StudioSidebar({ collapsed, pathname }: { collapsed: boolean; pathname: 
       ],
     },
   ];
-
-  // Check if the current user is a creator or viewer
-  // For demo purposes, we show the convert page for viewers
-  const isCreator = true; // Will be determined by auth state in production
 
   return (
     <nav

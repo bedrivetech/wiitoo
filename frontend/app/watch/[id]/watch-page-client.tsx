@@ -1,8 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-// Using CSS transitions instead of framer-motion AnimatePresence
-// to avoid React 19 reconciler issues with framer-motion v12.
+import gsap from 'gsap';
 import { WiitooPlayer } from '@/components/player/wiitoo-player';
 import { TitleRow } from '@/components/watch/title-row';
 import { InfoRow } from '@/components/watch/info-row';
@@ -306,6 +305,37 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
 
+  /* ── GSAP refs ── */
+  const inlineChatRef = useRef<HTMLDivElement>(null);
+  const miniPlayerRef = useRef<HTMLDivElement>(null);
+
+  /* ── Animate inline chat on toggle ── */
+  useEffect(() => {
+    if (!inlineChatRef.current) return;
+    gsap.to(inlineChatRef.current, {
+      opacity: isChatOpen ? 1 : 0,
+      x: isChatOpen ? 0 : 16,
+      duration: 0.25,
+      ease: 'power2.out',
+      pointerEvents: isChatOpen ? 'all' : 'none',
+      overwrite: 'auto',
+    });
+  }, [isChatOpen]);
+
+  /* ── Animate mini-player on toggle ── */
+  useEffect(() => {
+    if (!miniPlayerRef.current) return;
+    gsap.to(miniPlayerRef.current, {
+      opacity: showMiniPlayer ? 1 : 0,
+      scale: showMiniPlayer ? 1 : 0.85,
+      y: showMiniPlayer ? 0 : 40,
+      duration: 0.3,
+      ease: 'power3.out',
+      pointerEvents: showMiniPlayer ? 'all' : 'none',
+      overwrite: 'auto',
+    });
+  }, [showMiniPlayer]);
+
   useEffect(() => {
     const handleScroll = () => {
       if (!playerContainerRef.current) return;
@@ -424,8 +454,8 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
                 </div>
               </div>
 
-              {/* Desktop inline chat — CSS transition instead of AnimatePresence */}
-              <div className={`hidden md:block absolute right-0 top-0 h-full transition-all duration-200 ease-out ${isChatOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
+              {/* Desktop inline chat — GSAP */}
+              <div ref={inlineChatRef} className="hidden md:block absolute right-0 top-0 h-full" style={{ opacity: 0, transform: 'translateX(16px)' }}>
                 <div className="w-[360px] h-full chat-panel rounded-xl overflow-hidden border border-bg-border">
                   <ChatDrawerInline onClose={closeChat} />
                 </div>
@@ -461,8 +491,8 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
         </div>
       </main>
 
-      {/* ── Floating Mini-Player — CSS transition instead of AnimatePresence */}
-      <div className={`fixed bottom-4 right-4 z-50 w-[320px] md:w-[360px] transition-all duration-300 ease-out ${showMiniPlayer ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-85 translate-y-10 pointer-events-none'}`}>
+      {/* ── Floating Mini-Player — GSAP */}
+      <div ref={miniPlayerRef} className="fixed bottom-4 right-4 z-50 w-[320px] md:w-[360px]" style={{ opacity: 0, scale: '0.85', translate: '0 40px' }}>
         <div className="rounded-xl overflow-hidden border-2 border-bg-border shadow-2xl">
           <WiitooPlayer
             src={video.hlsUrl}
