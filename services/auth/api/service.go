@@ -7,7 +7,6 @@ import (
 	"github.com/bedrivetech/wiitoo/services/auth/internal/config"
 	"github.com/bedrivetech/wiitoo/services/auth/internal/handler"
 	"github.com/bedrivetech/wiitoo/services/auth/internal/middleware"
-	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
 	"github.com/bedrivetech/wiitoo/services/auth/internal/repository"
 	"github.com/bedrivetech/wiitoo/services/auth/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -15,7 +14,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
+func Setup(r chi.Router, admin chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	cfg := config.Load()
 
 	// Initialize repositories
@@ -87,37 +86,32 @@ func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 		})
 	})
 
-	// Admin routes (protected by auth + admin role)
-	r.Route("/api/v1/admin", func(r chi.Router) {
-		r.Use(authMiddleware.Authenticate)
-		r.Use(authMiddleware.RequireRole(model.RoleAdmin))
+	// Admin routes (protected by shared JWT auth + admin role middleware)
+	// User management
+	admin.Get("/users", adminHandler.ListUsers)
+	admin.Get("/users/{id}", adminHandler.GetUser)
+	admin.Patch("/users/{id}", adminHandler.UpdateUser)
+	admin.Delete("/users/{id}", adminHandler.DeleteUser)
 
-		// User management
-		r.Get("/users", adminHandler.ListUsers)
-		r.Get("/users/{id}", adminHandler.GetUser)
-		r.Patch("/users/{id}", adminHandler.UpdateUser)
-		r.Delete("/users/{id}", adminHandler.DeleteUser)
+	// User profile & extended management
+	admin.Get("/users/profile/{id}", adminHandler.GetUserProfile)
+	admin.Post("/users/{id}/ban", adminHandler.BanUser)
+	admin.Post("/users/{id}/unban", adminHandler.UnbanUser)
+	admin.Put("/users/{id}/notes", adminHandler.UpdateUserNotes)
+	admin.Put("/users/{id}/role", adminHandler.UpdateUserRole)
+	admin.Put("/users/{id}/verify", adminHandler.SetCreatorVerified)
 
-		// User profile & extended management
-		r.Get("/users/profile/{id}", adminHandler.GetUserProfile)
-		r.Post("/users/{id}/ban", adminHandler.BanUser)
-		r.Post("/users/{id}/unban", adminHandler.UnbanUser)
-		r.Put("/users/{id}/notes", adminHandler.UpdateUserNotes)
-		r.Put("/users/{id}/role", adminHandler.UpdateUserRole)
-		r.Put("/users/{id}/verify", adminHandler.SetCreatorVerified)
+	// Bulk operations
+	admin.Post("/users/bulk/status", adminHandler.BulkUpdateStatus)
+	admin.Post("/users/bulk/role", adminHandler.BulkAssignRole)
 
-		// Bulk operations
-		r.Post("/users/bulk/status", adminHandler.BulkUpdateStatus)
-		r.Post("/users/bulk/role", adminHandler.BulkAssignRole)
+	// Export
+	admin.Get("/users/export", adminHandler.ExportUsersCSV)
 
-		// Export
-		r.Get("/users/export", adminHandler.ExportUsersCSV)
-
-		// Creator verification
-		r.Get("/creator-verification", adminHandler.ListCreatorVerificationRequests)
-		r.Post("/creator-verification/{id}/approve", adminHandler.ApproveCreatorVerification)
-		r.Post("/creator-verification/{id}/reject", adminHandler.RejectCreatorVerification)
-	})
+	// Creator verification
+	admin.Get("/creator-verification", adminHandler.ListCreatorVerificationRequests)
+	admin.Post("/creator-verification/{id}/approve", adminHandler.ApproveCreatorVerification)
+	admin.Post("/creator-verification/{id}/reject", adminHandler.RejectCreatorVerification)
 
 	return func() {}
 }

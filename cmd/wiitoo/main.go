@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	middlewarepkg "github.com/bedrivetech/wiitoo/pkg/middleware"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -74,18 +75,25 @@ func main() {
 		MaxAge:           300,
 	}))
 
+	// Create shared admin sub-router with JWT auth + admin role check.
+	// Each service registers its admin routes on this router using relative paths.
+	adminMW := middlewarepkg.NewAdminMiddleware()
+	adminRouter := chi.NewRouter()
+	adminRouter.Use(adminMW.Handler)
+	r.Mount("/api/v1/admin", adminRouter)
+
 	// Mount all service routes onto the shared router.
 	// Each service's Setup function adds its own Route groups and middleware.
 	cleanups := []func(){}
-	cleanups = append(cleanups, authapi.Setup(r, pool, rdb))
-	cleanups = append(cleanups, videoapi.Setup(r, pool, rdb))
-	cleanups = append(cleanups, streamapi.Setup(r, pool, rdb))
-	cleanups = append(cleanups, chatapi.Setup(r, pool, rdb))
-	cleanups = append(cleanups, paymentapi.Setup(r, pool, rdb))
-	cleanups = append(cleanups, contentapi.Setup(r, pool, rdb))
-	cleanups = append(cleanups, notificationapi.Setup(r, pool, rdb))
-	cleanups = append(cleanups, emailapi.Setup(r, pool, rdb))
-	cleanups = append(cleanups, storageapi.Setup(r, pool, rdb))
+	cleanups = append(cleanups, authapi.Setup(r, adminRouter, pool, rdb))
+	cleanups = append(cleanups, videoapi.Setup(r, adminRouter, pool, rdb))
+	cleanups = append(cleanups, streamapi.Setup(r, adminRouter, pool, rdb))
+	cleanups = append(cleanups, chatapi.Setup(r, adminRouter, pool, rdb))
+	cleanups = append(cleanups, paymentapi.Setup(r, adminRouter, pool, rdb))
+	cleanups = append(cleanups, contentapi.Setup(r, adminRouter, pool, rdb))
+	cleanups = append(cleanups, notificationapi.Setup(r, adminRouter, pool, rdb))
+	cleanups = append(cleanups, emailapi.Setup(r, adminRouter, pool, rdb))
+	cleanups = append(cleanups, storageapi.Setup(r, adminRouter, pool, rdb))
 
 	slog.Info("all services registered", "count", len(cleanups))
 

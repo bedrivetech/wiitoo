@@ -1,8 +1,6 @@
 package api
 
 import (
-	"net/http"
-
 	svcconfig "github.com/bedrivetech/wiitoo/services/payment/internal/config"
 	"github.com/bedrivetech/wiitoo/services/payment/internal/handler"
 	"github.com/bedrivetech/wiitoo/services/payment/internal/service"
@@ -11,24 +9,21 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
+func Setup(r chi.Router, admin chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	cfg := svcconfig.Load()
 
 	paySvc := service.NewPaymentService(cfg, pool)
 	h := handler.NewPaymentHandler(paySvc)
 	adminH := handler.NewAdminHandler(paySvc)
 
-	// Admin routes — protected by inline X-User-Role check
-	r.Route("/api/v1/admin", func(r chi.Router) {
-		r.Use(adminRoleMiddleware)
-		r.Get("/transactions", adminH.ListTransactions)
-		r.Get("/transactions/{id}", adminH.GetTransaction)
-		r.Get("/payouts", adminH.ListPayouts)
-		r.Post("/payouts", adminH.TriggerPayout)
-		r.Get("/subscriptions", adminH.ListSubscriptions)
-		r.Post("/subscriptions/{id}/cancel", adminH.CancelSubscription)
-		r.Post("/refund", adminH.IssueRefund)
-	})
+	// Admin routes — protected by shared JWT auth + admin role middleware
+	admin.Get("/transactions", adminH.ListTransactions)
+	admin.Get("/transactions/{id}", adminH.GetTransaction)
+	admin.Get("/payouts", adminH.ListPayouts)
+	admin.Post("/payouts", adminH.TriggerPayout)
+	admin.Get("/subscriptions", adminH.ListSubscriptions)
+	admin.Post("/subscriptions/{id}/cancel", adminH.CancelSubscription)
+	admin.Post("/refund", adminH.IssueRefund)
 
 	r.Route("/api/v1/payments", func(r chi.Router) {
 		r.Post("/checkout", h.CreateCheckout)
@@ -47,17 +42,4 @@ func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	})
 
 	return func() {}
-}
-
-func adminRoleMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		role := r.Header.Get("X-User-Role")
-		if role != "admin" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte(`{"success":false,"error":{"code":"FORBIDDEN","message":"Access denied"}}`))
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }

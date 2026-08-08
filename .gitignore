@@ -26,3 +26,4 @@ go.work.sum
 recordings/
 tmp/wiitoo
 vendor/
+wiitoo

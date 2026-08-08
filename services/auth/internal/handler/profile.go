@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/bedrivetech/wiitoo/services/auth/internal/middleware"
 	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
@@ -179,7 +180,7 @@ func (h *ProfileHandler) EmailChange(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate OTPs for both old and new email
-	oldCode, err := h.otpService.GenerateOTP(r.Context(), userID, service.OTPPurposeEmailChangeOld, 10*60)
+	oldCode, err := h.otpService.GenerateOTP(r.Context(), userID, service.OTPPurposeEmailChangeOld, 10*time.Minute)
 	if err != nil {
 		slog.Error("failed to generate OTP for old email", "error", err)
 		writeJSON(w, http.StatusInternalServerError, model.APIResponse{
@@ -189,7 +190,7 @@ func (h *ProfileHandler) EmailChange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newCode, err := h.otpService.GenerateOTP(r.Context(), userID, service.OTPPurposeEmailChangeNew, 10*60)
+	newCode, err := h.otpService.GenerateOTP(r.Context(), userID, service.OTPPurposeEmailChangeNew, 10*time.Minute)
 	if err != nil {
 		slog.Error("failed to generate OTP for new email", "error", err)
 		writeJSON(w, http.StatusInternalServerError, model.APIResponse{

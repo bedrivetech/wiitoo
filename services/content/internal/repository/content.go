@@ -15,7 +15,7 @@ type Category struct {
 	Name        string `json:"name"`
 	Slug        string `json:"slug"`
 	Description string `json:"description"`
-	Thumbnail   string `json:"thumbnail"`
+	Thumbnail   *string `json:"thumbnail"`
 	ViewerCount int    `json:"viewerCount"`
 	StreamCount int    `json:"streamCount"`
 }

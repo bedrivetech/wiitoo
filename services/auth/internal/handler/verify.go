@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
 	"github.com/bedrivetech/wiitoo/services/auth/internal/repository"
@@ -168,7 +169,7 @@ func (h *VerifyHandler) ResendOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate and send new OTP
-	code, err := h.otpService.GenerateOTP(r.Context(), user.ID, service.OTPPurposeEmailVerify, 10*60)
+	code, err := h.otpService.GenerateOTP(r.Context(), user.ID, service.OTPPurposeEmailVerify, 10*time.Minute)
 	if err != nil {
 		slog.Error("failed to generate OTP for resend", "error", err)
 		writeJSON(w, http.StatusInternalServerError, model.APIResponse{

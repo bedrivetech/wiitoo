@@ -22,7 +22,7 @@ type Category struct {
 	Name        string `json:"name"`
 	Slug        string `json:"slug"`
 	Description string `json:"description"`
-	Thumbnail   string `json:"thumbnail"`
+	Thumbnail   *string `json:"thumbnail"`
 	ViewerCount int    `json:"viewerCount"`
 	StreamCount int    `json:"streamCount"`
 }
@@ -37,7 +37,7 @@ type SearchResult struct {
 	Score       float64 `json:"score"`
 }
 
-func (s *ContentService) CreateCategory(ctx context.Context, name, description, thumbnail string) (*Category, error) {
+func (s *ContentService) CreateCategory(ctx context.Context, name, description string, thumbnail *string) (*Category, error) {
 	c := &Category{
 		ID:          uuid.New().String(),
 		Name:        name,

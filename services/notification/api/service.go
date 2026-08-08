@@ -1,8 +1,6 @@
 package api
 
 import (
-	"net/http"
-
 	svcconfig "github.com/bedrivetech/wiitoo/services/notification/internal/config"
 	"github.com/bedrivetech/wiitoo/services/notification/internal/handler"
 	"github.com/bedrivetech/wiitoo/services/notification/internal/repository"
@@ -12,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
+func Setup(r chi.Router, admin chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	cfg := svcconfig.Load()
 
 	notifSvc := service.NewNotificationService(pool, cfg)
@@ -20,15 +18,12 @@ func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	notifRepo := repository.NewNotificationRepository(pool)
 	adminH := handler.NewAdminHandler(notifRepo)
 
-	// Admin routes — protected by inline X-User-Role check
-	r.Route("/api/v1/admin", func(r chi.Router) {
-		r.Use(adminRoleMiddleware)
-		r.Get("/templates", adminH.ListTemplates)
-		r.Post("/templates", adminH.CreateTemplate)
-		r.Get("/templates/{id}", adminH.GetTemplate)
-		r.Patch("/templates/{id}", adminH.UpdateTemplate)
-		r.Delete("/templates/{id}", adminH.DeleteTemplate)
-	})
+	// Admin routes — protected by shared JWT auth + admin role middleware
+	admin.Get("/templates", adminH.ListTemplates)
+	admin.Post("/templates", adminH.CreateTemplate)
+	admin.Get("/templates/{id}", adminH.GetTemplate)
+	admin.Patch("/templates/{id}", adminH.UpdateTemplate)
+	admin.Delete("/templates/{id}", adminH.DeleteTemplate)
 
 	r.Route("/api/v1/notifications", func(r chi.Router) {
 		r.Get("/{userId}", h.ListNotifications)
@@ -41,17 +36,4 @@ func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	})
 
 	return func() {}
-}
-
-func adminRoleMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		role := r.Header.Get("X-User-Role")
-		if role != "admin" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte(`{"success":false,"error":{"code":"FORBIDDEN","message":"Access denied"}}`))
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }

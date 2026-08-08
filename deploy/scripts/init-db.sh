@@ -4,8 +4,8 @@ set -e
 
 psql -U wiitoo -d postgres -c "CREATE DATABASE wiitoo;" 2>/dev/null || true
 
-# Connect to fusion and create extensions
-psql -U wiitoo -d fusion << 'SQL'
+# Connect to wiitoo and create extensions
+psql -U wiitoo -d wiitoo << 'SQL'
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
 	"github.com/bedrivetech/wiitoo/services/auth/internal/repository"
@@ -81,7 +82,7 @@ func (h *PasswordHandler) ResetRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate OTP
-	code, err := h.otpService.GenerateOTP(r.Context(), user.ID, service.OTPPurposePasswordReset, 10*60)
+	code, err := h.otpService.GenerateOTP(r.Context(), user.ID, service.OTPPurposePasswordReset, 10*time.Minute)
 	if err != nil {
 		slog.Error("failed to generate password reset OTP", "error", err)
 		writeJSON(w, http.StatusInternalServerError, model.APIResponse{

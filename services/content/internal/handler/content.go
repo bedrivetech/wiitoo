@@ -22,7 +22,7 @@ func (h *ContentHandler) CreateCategory(w http.ResponseWriter, r *http.Request) 
 	var req struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
-		Thumbnail   string `json:"thumbnail"`
+		Thumbnail   *string `json:"thumbnail"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		apierror.WriteJSON(w, http.StatusBadRequest, apierror.APIResponse{Success: false, Error: apierror.ErrInvalidRequestBody})

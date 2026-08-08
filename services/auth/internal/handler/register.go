@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
 	"github.com/bedrivetech/wiitoo/services/auth/internal/service"
@@ -56,7 +57,7 @@ func (h *RegisterHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate and send OTP for email verification
-	code, err := h.otpService.GenerateOTP(r.Context(), user.ID, service.OTPPurposeEmailVerify, 10*60) // 10 min
+	code, err := h.otpService.GenerateOTP(r.Context(), user.ID, service.OTPPurposeEmailVerify, 10*time.Minute)
 	if err != nil {
 		slog.Error("failed to generate OTP after registration", "error", err)
 		// Don't fail registration, but log the error

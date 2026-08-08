@@ -2,7 +2,6 @@ package api
 
 import (
 	"log/slog"
-	"net/http"
 
 	"github.com/bedrivetech/wiitoo/pkg/storage"
 	svcconfig "github.com/bedrivetech/wiitoo/services/video/internal/config"
@@ -14,7 +13,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
+func Setup(r chi.Router, admin chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	cfg := svcconfig.Load()
 
 	objStore, err := storage.NewS3Store(storage.S3Config{
@@ -36,14 +35,11 @@ func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	h := handler.NewVideoHandler(vidService)
 	adminH := handler.NewAdminHandler(vidRepo)
 
-	// Admin routes — protected by inline X-User-Role check (API gateway pattern)
-	r.Route("/api/v1/admin", func(r chi.Router) {
-		r.Use(adminRoleMiddleware)
-		r.Get("/videos", adminH.ListVideos)
-		r.Get("/videos/{id}", adminH.GetVideo)
-		r.Patch("/videos/{id}", adminH.UpdateVideo)
-		r.Delete("/videos/{id}", adminH.DeleteVideo)
-	})
+	// Admin routes — protected by shared JWT auth + admin role middleware
+	admin.Get("/videos", adminH.ListVideos)
+	admin.Get("/videos/{id}", adminH.GetVideo)
+	admin.Patch("/videos/{id}", adminH.UpdateVideo)
+	admin.Delete("/videos/{id}", adminH.DeleteVideo)
 
 	r.Route("/api/v1/video", func(r chi.Router) {
 		r.Post("/upload", h.RequestUpload)
@@ -57,18 +53,4 @@ func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	})
 
 	return func() {}
-}
-
-// adminRoleMiddleware checks that the caller has an admin role.
-func adminRoleMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		role := r.Header.Get("X-User-Role")
-		if role != "admin" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte(`{"success":false,"error":{"code":"FORBIDDEN","message":"Access denied"}}`))
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }

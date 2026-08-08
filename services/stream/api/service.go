@@ -1,8 +1,6 @@
 package api
 
 import (
-	"net/http"
-
 	svcconfig "github.com/bedrivetech/wiitoo/services/stream/internal/config"
 	"github.com/bedrivetech/wiitoo/services/stream/internal/handler"
 	"github.com/bedrivetech/wiitoo/services/stream/internal/service"
@@ -11,21 +9,18 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
+func Setup(r chi.Router, admin chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	cfg := svcconfig.Load()
 
 	streamSvc := service.NewStreamService(cfg, pool)
 	h := handler.NewStreamHandler(streamSvc)
 	adminH := handler.NewAdminHandler(streamSvc)
 
-	// Admin routes — protected by inline X-User-Role check
-	r.Route("/api/v1/admin", func(r chi.Router) {
-		r.Use(adminRoleMiddleware)
-		r.Get("/streams", adminH.ListStreams)
-		r.Get("/streams/{id}", adminH.GetStream)
-		r.Post("/streams/{id}/kill", adminH.KillStream)
-		r.Post("/users/{userId}/stream-ban", adminH.BanUserFromStreaming)
-	})
+	// Admin routes — protected by shared JWT auth + admin role middleware
+	admin.Get("/streams", adminH.ListStreams)
+	admin.Get("/streams/{id}", adminH.GetStream)
+	admin.Post("/streams/{id}/kill", adminH.KillStream)
+	admin.Post("/users/{userId}/stream-ban", adminH.BanUserFromStreaming)
 
 	r.Route("/api/v1/stream", func(r chi.Router) {
 		r.Post("/start", h.StartStream)
@@ -42,17 +37,4 @@ func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	})
 
 	return func() {}
-}
-
-func adminRoleMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		role := r.Header.Get("X-User-Role")
-		if role != "admin" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte(`{"success":false,"error":{"code":"FORBIDDEN","message":"Access denied"}}`))
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }

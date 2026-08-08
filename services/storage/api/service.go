@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"log/slog"
-	"net/http"
 
 	"github.com/bedrivetech/wiitoo/pkg/storage"
 	svcconfig "github.com/bedrivetech/wiitoo/services/storage/internal/config"
@@ -15,7 +14,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
+func Setup(r chi.Router, admin chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	_ = svcconfig.Load() // config loaded from env; used implicitly by service constructors
 
 	// Initialize repository
@@ -93,9 +92,7 @@ func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	})
 
 	// Admin endpoints
-	r.Route("/api/v1/admin/storage", func(r chi.Router) {
-		r.Use(adminRoleMiddleware)
-
+	admin.Route("/storage", func(r chi.Router) {
 		// Providers
 		r.Get("/providers", providerH.List)
 		r.Post("/providers", providerH.Create)
@@ -124,17 +121,4 @@ func Setup(r chi.Router, pool *pgxpool.Pool, rdb *redis.Client) func() {
 	})
 
 	return func() {}
-}
-
-func adminRoleMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		role := r.Header.Get("X-User-Role")
-		if role != "admin" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			w.Write([]byte(`{"success":false,"error":{"code":"FORBIDDEN","message":"Access denied"}}`))
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }
