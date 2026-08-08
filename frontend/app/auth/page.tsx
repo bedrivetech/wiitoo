@@ -1,11 +1,23 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback, useMemo, createContext, useContext } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
-// ── Dummy motion ── replaces framer-motion to fix React 19 reconciler crash.
-// Native elements silently ignore framer-motion props (initial, animate, exit).
+
+// ── Safe motion stubs ── Wrap native elements in components that discard
+// framer-motion props (initial, animate, exit, transition, whileHover, etc.)
+// to prevent React 19 from crashing on unknown DOM attributes.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const motion: any = { div: 'div', h1: 'h1', p: 'p', button: 'button', span: 'span', label: 'label' };
+const stripM = (p: Record<string, any>) => {
+  const { initial, animate, exit, transition, whileHover, whileTap, whileFocus, whileDrag, whileInView, layout, layoutId, variants, onAnimationStart, onAnimationComplete, ...rest } = p;
+  return rest;
+};
+const mkM = (tag: string) => React.forwardRef((props: any, ref: any) => React.createElement(tag, { ...stripM(props), ref }));
+const motion = {
+  div: mkM('div'), h1: mkM('h1'), h2: mkM('h2'), p: mkM('p'),
+  button: mkM('button'), span: mkM('span'), label: mkM('label'),
+  section: mkM('section'), img: mkM('img'),
+};
+// AnimatePresence replacement — renders children directly
 const AnimatePresence = (props: Record<string, any> & { children?: React.ReactNode }) => <>{props.children}</>;
 import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/lib/api-client';
