@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// Using CSS transitions instead of framer-motion AnimatePresence
+// to avoid React 19 reconciler issues with framer-motion v12.
 import { WiitooPlayer } from '@/components/player/wiitoo-player';
 import { TitleRow } from '@/components/watch/title-row';
 import { InfoRow } from '@/components/watch/info-row';
@@ -423,22 +424,11 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
                 </div>
               </div>
 
-              {/* Desktop inline chat */}
-              <div className="hidden md:block absolute right-0 top-0 h-full">
-                <AnimatePresence>
-                  {isChatOpen && (
-                    <motion.div
-                      key="chat-drawer"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className="w-[360px] h-full chat-panel rounded-xl overflow-hidden border border-bg-border"
-                    >
-                      <ChatDrawerInline onClose={closeChat} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+              {/* Desktop inline chat — CSS transition instead of AnimatePresence */}
+              <div className={`hidden md:block absolute right-0 top-0 h-full transition-all duration-200 ease-out ${isChatOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
+                <div className="w-[360px] h-full chat-panel rounded-xl overflow-hidden border border-bg-border">
+                  <ChatDrawerInline onClose={closeChat} />
+                </div>
               </div>
             </div>
 
@@ -471,43 +461,32 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
         </div>
       </main>
 
-      {/* ── Floating Mini-Player ── */}
-      <AnimatePresence>
-        {showMiniPlayer && (
-          <motion.div
-            key="mini-player"
-            initial={{ opacity: 0, scale: 0.85, y: 40, x: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
-            exit={{ opacity: 0, scale: 0.85, y: 40 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-4 right-4 z-50 w-[320px] md:w-[360px]"
+      {/* ── Floating Mini-Player — CSS transition instead of AnimatePresence */}
+      <div className={`fixed bottom-4 right-4 z-50 w-[320px] md:w-[360px] transition-all duration-300 ease-out ${showMiniPlayer ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-85 translate-y-10 pointer-events-none'}`}>
+        <div className="rounded-xl overflow-hidden border-2 border-bg-border shadow-2xl">
+          <WiitooPlayer
+            src={video.hlsUrl}
+            poster={video.posterUrl}
+            isLive={video.isLive}
+            title={video.title}
+            liveViewers={video.liveViewers}
+          />
+        </div>
+        <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+          <div className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5">
+            <span className="text-white text-[10px] font-medium truncate block max-w-[200px]">
+              {video.title}
+            </span>
+          </div>
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="bg-black/60 backdrop-blur-sm rounded-md p-1 hover:bg-black/80 transition-colors"
+            aria-label="Go to player"
           >
-            <div className="rounded-xl overflow-hidden border-2 border-bg-border shadow-2xl">
-              <WiitooPlayer
-                src={video.hlsUrl}
-                poster={video.posterUrl}
-                isLive={video.isLive}
-                title={video.title}
-                liveViewers={video.liveViewers}
-              />
-            </div>
-            <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
-              <div className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5">
-                <span className="text-white text-[10px] font-medium truncate block max-w-[200px]">
-                  {video.title}
-                </span>
-              </div>
-              <button
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="bg-black/60 backdrop-blur-sm rounded-md p-1 hover:bg-black/80 transition-colors"
-                aria-label="Go to player"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M19 15l-7-7-7 7" /></svg>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M19 15l-7-7-7 7" /></svg>
+          </button>
+        </div>
+      </div>
 
       {/* ── Mobile/tablet chat drawer ── */}
       <ChatDrawer />
