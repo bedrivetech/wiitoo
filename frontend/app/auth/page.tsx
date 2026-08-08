@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/lib/api-client';
 import { EmberParticles } from '@/components/auth/ember-particles';
-import { BackgroundCarousel } from '@/components/auth/background-carousel';
+import { VideoBackground } from '@/components/auth/video-background';
 
 /* ─── Types ─── */
 type AuthStep = 'vibe' | 'name' | 'key' | 'otp' | 'welcome' | 'login' | 'reset' | 'reset-otp' | 'reset-key';
@@ -77,7 +77,7 @@ export default function AuthPage() {
   return (
     <AuthContext.Provider value={{ step, goTo, email, setEmail, username, setUsername, displayName, setDisplayName, selectedVibes, setSelectedVibes, redirectTo }}>
       {/* ─── Cinematic Background ─── */}
-      <BackgroundCarousel
+      <VideoBackground
         selectedVibes={step === 'welcome' ? selectedVibes : step === 'vibe' ? [] : selectedVibes}
         mood={step === 'welcome' ? 'welcome' : step === 'login' ? 'login' : 'default'}
       />
