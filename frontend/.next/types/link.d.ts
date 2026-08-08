@@ -33,7 +33,16 @@ declare namespace __next_route_internal_types__ {
 
   type StaticRoutes = 
     | `/` // ../../app/(main)/page.tsx
+    | `/auth/login` // ../../app/(main)/auth/login/page.tsx
+    | `/auth/register` // ../../app/(main)/auth/register/page.tsx
+    | `/auth/reset-password` // ../../app/(main)/auth/reset-password/page.tsx
+    | `/auth/verify` // ../../app/(main)/auth/verify/page.tsx
+    | `/history` // ../../app/(main)/history/page.tsx
+    | `/liked` // ../../app/(main)/liked/page.tsx
     | `/search` // ../../app/(main)/search/page.tsx
+    | `/settings` // ../../app/(main)/settings/page.tsx
+    | `/studio` // ../../app/(main)/studio/page.tsx
+    | `/watch-later` // ../../app/(main)/watch-later/page.tsx
   type DynamicRoutes<T extends string = string> = 
     | `/browse/${SafeSlug<T>}` // ../../app/(main)/browse/[category]/page.tsx
     | `/creator/${SafeSlug<T>}` // ../../app/(main)/creator/[username]/page.tsx

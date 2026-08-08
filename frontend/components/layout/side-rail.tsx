@@ -91,19 +91,31 @@ export default function SideRail() {
             href="/history"
             icon={<HistoryIcon />}
             label="History"
-            active={false}
+            active={pathname === '/history'}
           />
           <RailIcon
             href="/liked"
             icon={<LikedIcon />}
             label="Liked"
-            active={false}
+            active={pathname === '/liked'}
+          />
+          <RailIcon
+            href="/watch-later"
+            icon={<WatchLaterIcon />}
+            label="Watch Later"
+            active={pathname === '/watch-later'}
           />
           <RailIcon
             href="/settings"
             icon={<SettingsIcon />}
             label="Settings"
-            active={false}
+            active={pathname === '/settings'}
+          />
+          <RailIcon
+            href="/studio"
+            icon={<StudioIcon />}
+            label="Studio"
+            active={pathname === '/studio'}
           />
         </div>
       </nav>
@@ -192,19 +204,19 @@ export default function SideRail() {
             href="/history"
             icon={<HistoryIcon />}
             label="History"
-            active={false}
+            active={pathname === '/history'}
           />
           <RailLabel
             href="/liked"
             icon={<LikedIcon />}
             label="Liked Videos"
-            active={false}
+            active={pathname === '/liked'}
           />
           <RailLabel
             href="/watch-later"
             icon={<WatchLaterIcon />}
             label="Watch Later"
-            active={false}
+            active={pathname === '/watch-later'}
           />
         </div>
 
@@ -215,13 +227,13 @@ export default function SideRail() {
             href="/settings"
             icon={<SettingsIcon />}
             label="Settings"
-            active={false}
+            active={pathname === '/settings'}
           />
           <RailLabel
             href="/studio"
             icon={<StudioIcon />}
             label="Creator Studio"
-            active={false}
+            active={pathname === '/studio'}
           />
         </div>
       </nav>

@@ -1,8 +1,17 @@
 {
+  "/(main)/auth/login/page": "app/(main)/auth/login/page.js",
+  "/(main)/auth/register/page": "app/(main)/auth/register/page.js",
+  "/(main)/auth/reset-password/page": "app/(main)/auth/reset-password/page.js",
+  "/(main)/auth/verify/page": "app/(main)/auth/verify/page.js",
   "/(main)/browse/[category]/page": "app/(main)/browse/[category]/page.js",
   "/(main)/creator/[username]/page": "app/(main)/creator/[username]/page.js",
+  "/(main)/history/page": "app/(main)/history/page.js",
+  "/(main)/liked/page": "app/(main)/liked/page.js",
   "/(main)/page": "app/(main)/page.js",
   "/(main)/search/page": "app/(main)/search/page.js",
+  "/(main)/settings/page": "app/(main)/settings/page.js",
+  "/(main)/studio/page": "app/(main)/studio/page.js",
+  "/(main)/watch-later/page": "app/(main)/watch-later/page.js",
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
   "/watch/[id]/page": "app/watch/[id]/page.js"

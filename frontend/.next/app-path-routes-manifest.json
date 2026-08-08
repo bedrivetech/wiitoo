@@ -1,8 +1,17 @@
 {
+  "/(main)/auth/login/page": "/auth/login",
+  "/(main)/auth/register/page": "/auth/register",
+  "/(main)/auth/reset-password/page": "/auth/reset-password",
+  "/(main)/auth/verify/page": "/auth/verify",
   "/(main)/browse/[category]/page": "/browse/[category]",
   "/(main)/creator/[username]/page": "/creator/[username]",
+  "/(main)/history/page": "/history",
+  "/(main)/liked/page": "/liked",
   "/(main)/page": "/",
   "/(main)/search/page": "/search",
+  "/(main)/settings/page": "/settings",
+  "/(main)/studio/page": "/studio",
+  "/(main)/watch-later/page": "/watch-later",
   "/_global-error/page": "/_global-error",
   "/_not-found/page": "/_not-found",
   "/watch/[id]/page": "/watch/[id]"
