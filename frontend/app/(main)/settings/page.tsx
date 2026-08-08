@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/lib/auth-store';
 
 export default function SettingsPage() {
@@ -171,25 +170,20 @@ export default function SettingsPage() {
         </section>
       </div>
 
-      {/* ── Creator Conversion Modal ── */}
-      <AnimatePresence>
-        {showCreatorModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4"
-            style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
-            onClick={() => setShowCreatorModal(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.97 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-md rounded-2xl p-6 border border-bg-border bg-bg-raised"
-              onClick={(e) => e.stopPropagation()}
-            >
+      {/* ── Creator Conversion Modal — CSS transition ── */}
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center px-4 transition-all duration-200 ease-out ${
+          showCreatorModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+        onClick={() => setShowCreatorModal(false)}
+      >
+        <div
+          className={`w-full max-w-md rounded-2xl p-6 border border-bg-border bg-bg-raised transition-all duration-200 ease-out ${
+            showCreatorModal ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-3'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
               <h3 className="text-title-2 mb-2 text-text-primary">Become a Creator</h3>
               <p className="text-small mb-6 text-text-tertiary">
                 Choose how you want to start creating on Wiitoo.
@@ -261,10 +255,8 @@ export default function SettingsPage() {
                       : 'Select an option'}
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 /* ─── Cinematic Images ───
  *  Dark, moody, high-quality — matched to Wiitoo's "warm darkness" brand.
@@ -118,25 +117,15 @@ export function BackgroundCarousel({ selectedVibes = [], mood = 'default' }: Bac
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden">
-      {/* Background images with cross-fade */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={vibeImage ? 'vibe' : currentIndex}
-          className="absolute inset-0"
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.02 }}
-          transition={{ duration: 1.8, ease: [0.25, 0.1, 0.25, 1] }}
-        >
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: `url(${vibeImage || CINEMATIC_IMAGES[currentIndex].src})`,
-              filter: 'saturate(0.7) brightness(0.6) contrast(1.1)',
-            }}
-          />
-        </motion.div>
-      </AnimatePresence>
+      {/* Background images with CSS entry animation (key change triggers remount) */}
+      <div
+        key={vibeImage ? 'vibe' : currentIndex}
+        className="absolute inset-0 bg-cover bg-center animate-fade-in-scale"
+        style={{
+          backgroundImage: `url(${vibeImage || CINEMATIC_IMAGES[currentIndex].src})`,
+          filter: 'saturate(0.7) brightness(0.6) contrast(1.1)',
+        }}
+      />
 
       {/* Gradient overlay — brand-matched, ensures readability */}
       <div

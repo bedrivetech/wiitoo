@@ -2,7 +2,11 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
+// ── Dummy motion ── replaces framer-motion to fix React 19 reconciler crash.
+// Native elements silently ignore framer-motion props (initial, animate, exit).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const motion: any = { div: 'div', h1: 'h1', p: 'p', button: 'button', span: 'span', label: 'label' };
+const AnimatePresence = (props: Record<string, any> & { children?: React.ReactNode }) => <>{props.children}</>;
 import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/lib/api-client';
 import { EmberParticles } from '@/components/auth/ember-particles';

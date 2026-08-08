@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import CategoriesBar from '@/components/browse/categories-bar';
 import { useAuthStore } from '@/lib/auth-store';
-import { motion, AnimatePresence } from 'framer-motion';
 
 /* ── Popular search suggestions ── */
 const POPULAR_SEARCHES = [
@@ -143,48 +142,42 @@ export default function Header() {
               )}
             </form>
 
-            {/* Suggestions dropdown */}
-            <AnimatePresence>
-              {showSuggestions && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-bg-border bg-bg-elevated shadow-2xl overflow-hidden"
-                >
-                  {searchQuery.trim() === '' ? (
-                    <>
-                      <div className="px-3 py-2 text-tiny text-text-tertiary font-medium">Popular searches</div>
-                      {POPULAR_SEARCHES.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => handleSuggestionClick(s)}
-                          className="w-full text-left flex items-center gap-2 px-3 py-2 text-small text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0">
-                            <circle cx="11" cy="11" r="8" />
-                            <path d="m21 21-4.3-4.3" />
-                          </svg>
-                          {s}
-                        </button>
-                      ))}
-                    </>
-                  ) : (
+            {/* Suggestions dropdown — CSS transition instead of AnimatePresence */}
+            <div
+              className={`absolute top-full left-0 right-0 mt-1 rounded-xl border border-bg-border bg-bg-elevated shadow-2xl overflow-hidden transition-all duration-150 ease-out ${
+                showSuggestions ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-1 pointer-events-none'
+              }`}
+            >
+              {searchQuery.trim() === '' ? (
+                <>
+                  <div className="px-3 py-2 text-tiny text-text-tertiary font-medium">Popular searches</div>
+                  {POPULAR_SEARCHES.map((s) => (
                     <button
-                      onClick={() => handleSuggestionClick(searchQuery)}
-                      className="w-full text-left flex items-center gap-2 px-3 py-2 text-small text-text-secondary hover:bg-bg-hover transition-colors"
+                      key={s}
+                      onClick={() => handleSuggestionClick(s)}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 text-small text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0">
                         <circle cx="11" cy="11" r="8" />
                         <path d="m21 21-4.3-4.3" />
                       </svg>
-                      Search for &quot;{searchQuery}&quot;
+                      {s}
                     </button>
-                  )}
-                </motion.div>
+                  ))}
+                </>
+              ) : (
+                <button
+                  onClick={() => handleSuggestionClick(searchQuery)}
+                  className="w-full text-left flex items-center gap-2 px-3 py-2 text-small text-text-secondary hover:bg-bg-hover transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                  Search for &quot;{searchQuery}&quot;
+                </button>
               )}
-            </AnimatePresence>
+            </div>
           </div>
 
           {/* Nav actions */}
@@ -224,29 +217,23 @@ export default function Header() {
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-live rounded-full animate-pulse-live" />
                 </button>
 
-                {/* Bell dropdown */}
-                <AnimatePresence>
-                  {bellOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-bg-border bg-bg-elevated shadow-2xl overflow-hidden"
-                    >
-                      <div className="px-3 py-2.5 border-b border-bg-border">
-                        <p className="text-small font-semibold text-text-primary">Notifications</p>
-                      </div>
-                      <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-text-muted mb-2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                        </svg>
-                        <p className="text-small text-text-tertiary">No notifications yet</p>
-                        <p className="text-tiny text-text-muted mt-0.5">Activity from your streams and follows will appear here.</p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {/* Bell dropdown — CSS transition */}
+                <div
+                  className={`absolute right-0 top-full mt-2 w-72 rounded-xl border border-bg-border bg-bg-elevated shadow-2xl overflow-hidden transition-all duration-150 ease-out ${
+                    bellOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-1 pointer-events-none'
+                  }`}
+                >
+                  <div className="px-3 py-2.5 border-b border-bg-border">
+                    <p className="text-small font-semibold text-text-primary">Notifications</p>
+                  </div>
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-text-muted mb-2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    </svg>
+                    <p className="text-small text-text-tertiary">No notifications yet</p>
+                    <p className="text-tiny text-text-muted mt-0.5">Activity from your streams and follows will appear here.</p>
+                  </div>
+                </div>
               </div>
             )}
 
