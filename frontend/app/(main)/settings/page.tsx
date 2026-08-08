@@ -10,7 +10,7 @@ export default function SettingsPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const router = useRouter();
 
-  const [displayName, setDisplayName] = useState(user?.display_name || '');
+  const [displayName, setDisplayName] = useState(user?.display_name || user?.username || '');
   const [bio, setBio] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [autoplay, setAutoplay] = useState(true);
@@ -62,7 +62,7 @@ export default function SettingsPage() {
                 }}
               >
                 {isAuthenticated && user
-                  ? user.display_name.charAt(0).toUpperCase()
+                  ? (user.display_name || user.username || '?').charAt(0).toUpperCase()
                   : '?'}
               </div>
               <div>

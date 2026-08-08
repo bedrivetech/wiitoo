@@ -152,6 +152,15 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         pendingEmail: state.pendingEmail,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Fix stale persisted data — ensure user has all expected fields
+        if (state?.user) {
+          state.user.display_name = state.user.display_name || state.user.username || '';
+          state.user.avatar_url = state.user.avatar_url || '';
+          state.user.role = state.user.role || 'viewer';
+          state.user.status = state.user.status || 'active';
+        }
+      },
     }
   )
 );

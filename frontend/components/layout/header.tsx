@@ -155,7 +155,7 @@ export default function Header() {
                   }}
                   title="Account"
                 >
-                  {user.display_name.charAt(0).toUpperCase()}
+                  {(user.display_name || user.username || '?').charAt(0).toUpperCase()}
                 </button>
 
                 {/* Dropdown */}
@@ -170,7 +170,7 @@ export default function Header() {
                     {/* User info */}
                     <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--color-bg-border)' }}>
                       <p className="text-small font-medium" style={{ color: 'var(--color-text-primary)' }}>
-                        {user.display_name}
+                        {user.display_name || user.username}
                       </p>
                       <p className="text-tiny mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>
                         {user.email}
