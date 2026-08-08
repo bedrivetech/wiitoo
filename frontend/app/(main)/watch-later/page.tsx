@@ -48,7 +48,7 @@ export default function WatchLaterPage() {
           Save videos to watch later and never lose track
         </p>
         <Link
-          href="/auth/login?redirect=/watch-later"
+          href={{ pathname: '/auth', query: { redirect: '/watch-later' } }}
           className="py-2.5 px-6 rounded-lg text-small font-semibold text-white transition-opacity hover:opacity-90"
           style={{
             background:

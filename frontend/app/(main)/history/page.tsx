@@ -64,7 +64,7 @@ export default function HistoryPage() {
           Watch history helps you find videos you&apos;ve seen before
         </p>
         <Link
-          href="/auth/login?redirect=/history"
+          href={{ pathname: '/auth', query: { redirect: '/history' } }}
           className="py-2.5 px-6 rounded-lg text-small font-semibold text-white transition-opacity hover:opacity-90"
           style={{
             background:

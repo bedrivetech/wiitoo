@@ -95,7 +95,7 @@ export default function StudioPage() {
             </div>
 
             <Link
-              href="/auth/login?redirect=/studio"
+              href={{ pathname: '/auth', query: { redirect: '/studio' } }}
               className="inline-block py-2 px-4 rounded-lg text-small font-medium transition-all"
               style={{
                 border: '1px solid var(--color-bg-border)',

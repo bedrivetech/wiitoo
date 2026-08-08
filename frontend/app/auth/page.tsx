@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback, createContext, useContext, useMemo } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuthStore } from '@/lib/auth-store';
@@ -20,7 +20,8 @@ interface AuthContextType {
   displayName: string;
   setDisplayName: (v: string) => void;
   selectedVibes: string[];
-  setSelectedVibes: (v: string[]) => void;
+  setSelectedVibes: React.Dispatch<React.SetStateAction<string[]>>;
+  redirectTo: string | null;
 }
 
 const AuthContext = createContext<AuthContextType>(null!);
@@ -50,16 +51,30 @@ export default function AuthPage() {
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
 
-  // If already authenticated, go home
+  // Read ?redirect= query param client-side (avoids Suspense boundary)
   useEffect(() => {
-    if (isAuth) router.push('/');
-  }, [isAuth, router]);
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get('redirect');
+    if (r) setRedirectTo(r);
+  }, []);
+
+  // If already authenticated, go home or to redirect
+  useEffect(() => {
+    if (isAuth) {
+      if (redirectTo) {
+        window.location.href = redirectTo;
+      } else {
+        router.push('/');
+      }
+    }
+  }, [isAuth, router, redirectTo]);
 
   const goTo = useCallback((s: AuthStep) => setStep(s), []);
 
   return (
-    <AuthContext.Provider value={{ step, goTo, email, setEmail, username, setUsername, displayName, setDisplayName, selectedVibes, setSelectedVibes }}>
+    <AuthContext.Provider value={{ step, goTo, email, setEmail, username, setUsername, displayName, setDisplayName, selectedVibes, setSelectedVibes, redirectTo }}>
       <div className="relative min-h-screen overflow-hidden bg-bg-base selection:bg-brand-500/20">
         {/* Ambient haze */}
         <div className="fixed inset-0 z-0">
@@ -908,7 +923,7 @@ function OtpScreen() {
    STEP 5: WELCOME — "Wiitoo is yours."
    ──────────────────────────────────────────────────────────── */
 function WelcomeOverlay() {
-  const { goTo, displayName, username, selectedVibes } = useAuthCtx();
+  const { goTo, displayName, username, selectedVibes, redirectTo } = useAuthCtx();
   const user = useAuthStore((s) => s.user);
   const name = displayName || user?.display_name || username || 'friend';
 
@@ -919,10 +934,10 @@ function WelcomeOverlay() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      window.location.href = '/';
+      window.location.href = redirectTo || '/';
     }, 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [redirectTo]);
 
   return (
     <motion.div
@@ -1020,7 +1035,7 @@ function WelcomeOverlay() {
    ──────────────────────────────────────────────────────────── */
 function LoginScreen() {
   const router = useRouter();
-  const { goTo, email, setEmail } = useAuthCtx();
+  const { goTo, email, setEmail, redirectTo } = useAuthCtx();
   const login = useAuthStore((s) => s.login);
   const loading = useAuthStore((s) => s.loading);
   const storeError = useAuthStore((s) => s.error);
@@ -1036,7 +1051,11 @@ function LoginScreen() {
     setError('');
     try {
       await login(email, key);
-      router.push('/');
+      if (redirectTo) {
+        window.location.href = redirectTo;
+      } else {
+        router.push('/');
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'That didn\'t match. Try again?');
     }
@@ -1217,7 +1236,7 @@ function ResetOtpStep() {
 
 function ResetKeyStep() {
   const router = useRouter();
-  const { goTo } = useAuthCtx();
+  const { goTo, redirectTo } = useAuthCtx();
   const [key, setKey] = useState('');
   const [loading, setLoading] = useState(false);
   const handleSubmit = async () => {
@@ -1225,7 +1244,11 @@ function ResetKeyStep() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 800));
     setLoading(false);
-    router.push('/');
+    if (redirectTo) {
+      window.location.href = redirectTo;
+    } else {
+      router.push('/');
+    }
   };
   const strength = key.length >= 12 ? 1 : key.length >= 8 ? 0.6 : key.length >= 6 ? 0.3 : 0;
   return (

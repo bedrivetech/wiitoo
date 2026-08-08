@@ -56,7 +56,7 @@ export default function LikedPage() {
           All the videos you&apos;ve liked in one place
         </p>
         <Link
-          href="/auth/login?redirect=/liked"
+          href={{ pathname: '/auth', query: { redirect: '/liked' } }}
           className="py-2.5 px-6 rounded-lg text-small font-semibold text-white transition-opacity hover:opacity-90"
           style={{
             background:
