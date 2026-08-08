@@ -7,7 +7,7 @@ import (
 
 	"github.com/bedrivetech/wiitoo/pkg/apierror"
 	"github.com/bedrivetech/wiitoo/pkg/stream"
-	"github.com/bedrivetech/wiitoo/stream/internal/service"
+	"github.com/bedrivetech/wiitoo/services/stream/internal/service"
 	"github.com/go-chi/chi/v5"
 )
 

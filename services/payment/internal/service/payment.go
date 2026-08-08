@@ -12,8 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	ppkg "github.com/bedrivetech/wiitoo/pkg/payment"
 	pprovider "github.com/bedrivetech/wiitoo/pkg/payment/provider"
-	"github.com/bedrivetech/wiitoo/payment/internal/config"
-	"github.com/bedrivetech/wiitoo/payment/internal/model"
+	"github.com/bedrivetech/wiitoo/services/payment/internal/config"
+	"github.com/bedrivetech/wiitoo/services/payment/internal/model"
 )
 
 type PaymentService struct {

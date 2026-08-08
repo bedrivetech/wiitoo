@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/bedrivetech/wiitoo/chat/internal/repository"
+	"github.com/bedrivetech/wiitoo/services/chat/internal/repository"
 	"github.com/bedrivetech/wiitoo/pkg/adminhandler"
 	"github.com/bedrivetech/wiitoo/pkg/apierror"
 	"github.com/go-chi/chi/v5"

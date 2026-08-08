@@ -7,9 +7,9 @@ import (
 
 	"github.com/bedrivetech/wiitoo/pkg/storage"
 	"github.com/bedrivetech/wiitoo/pkg/videopipeline"
-	"github.com/bedrivetech/wiitoo/video/internal/config"
-	"github.com/bedrivetech/wiitoo/video/internal/model"
-	"github.com/bedrivetech/wiitoo/video/internal/repository"
+	"github.com/bedrivetech/wiitoo/services/video/internal/config"
+	"github.com/bedrivetech/wiitoo/services/video/internal/model"
+	"github.com/bedrivetech/wiitoo/services/video/internal/repository"
 	"github.com/google/uuid"
 )
 

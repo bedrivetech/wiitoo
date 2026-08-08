@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/bedrivetech/wiitoo/auth/internal/config"
-	"github.com/bedrivetech/wiitoo/auth/internal/model"
-	"github.com/bedrivetech/wiitoo/auth/internal/repository"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/config"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/repository"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/google"

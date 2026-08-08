@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/bedrivetech/wiitoo/pkg/apierror"
-	"github.com/bedrivetech/wiitoo/storage/internal/model"
-	"github.com/bedrivetech/wiitoo/storage/internal/service"
+	"github.com/bedrivetech/wiitoo/services/storage/internal/model"
+	"github.com/bedrivetech/wiitoo/services/storage/internal/service"
 	"github.com/go-chi/chi/v5"
 )
 

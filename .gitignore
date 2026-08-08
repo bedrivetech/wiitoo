@@ -1,35 +1,28 @@
-# Dependencies
-bin/
-vendor/
 
 # Build output
+# Dependencies
+# Docker
+# Environment files
+# Go workspace
+# IDE
+# MediaMTX recordings
+# OS
+# Temp
 *.out
+*.swo
+*.swp
 *.test
 *.test.exe
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
 .DS_Store
-Thumbs.db
-
-# Environment files
 .env
 .env.local
 .env.production
-
-# Docker
+.idea/
+.vscode/
+Thumbs.db
+bin/
 docker-compose.override.yml
-
-# Go workspace
 go.work.sum
-
-# MediaMTX recordings
 recordings/
-
-# Temp
-tmp/
+tmp/wiitoo
+vendor/

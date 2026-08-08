@@ -5,7 +5,7 @@ import (
 
 	"github.com/bedrivetech/wiitoo/pkg/adminhandler"
 	"github.com/bedrivetech/wiitoo/pkg/apierror"
-	"github.com/bedrivetech/wiitoo/storage/internal/repository"
+	"github.com/bedrivetech/wiitoo/services/storage/internal/repository"
 )
 
 // AdminHandler handles admin-only storage operations.

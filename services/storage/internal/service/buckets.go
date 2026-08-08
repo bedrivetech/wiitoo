@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bedrivetech/wiitoo/storage/internal/model"
-	"github.com/bedrivetech/wiitoo/storage/internal/repository"
+	"github.com/bedrivetech/wiitoo/services/storage/internal/model"
+	"github.com/bedrivetech/wiitoo/services/storage/internal/repository"
 )
 
 // BucketService handles CRUD operations for storage buckets.

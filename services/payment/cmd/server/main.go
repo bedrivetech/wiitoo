@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/bedrivetech/wiitoo/pkg/database"
-	"github.com/bedrivetech/wiitoo/payment/internal/config"
-	"github.com/bedrivetech/wiitoo/payment/internal/handler"
-	"github.com/bedrivetech/wiitoo/payment/internal/service"
+	"github.com/bedrivetech/wiitoo/services/payment/internal/config"
+	"github.com/bedrivetech/wiitoo/services/payment/internal/handler"
+	"github.com/bedrivetech/wiitoo/services/payment/internal/service"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"

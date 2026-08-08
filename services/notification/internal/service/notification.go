@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/bedrivetech/wiitoo/notification/internal/config"
+	"github.com/bedrivetech/wiitoo/services/notification/internal/config"
 )
 
 type Notification struct {

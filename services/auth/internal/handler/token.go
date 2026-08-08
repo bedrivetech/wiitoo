@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/bedrivetech/wiitoo/auth/internal/middleware"
-	"github.com/bedrivetech/wiitoo/auth/internal/model"
-	"github.com/bedrivetech/wiitoo/auth/internal/service"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/middleware"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/service"
 )
 
 // TokenHandler handles token refresh and logout.

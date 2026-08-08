@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/bedrivetech/wiitoo/pkg/apierror"
-	"github.com/bedrivetech/wiitoo/storage/internal/service"
+	"github.com/bedrivetech/wiitoo/services/storage/internal/service"
 )
 
 // StorageHandler handles object upload/download endpoints.

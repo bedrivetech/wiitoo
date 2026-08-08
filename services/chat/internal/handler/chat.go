@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bedrivetech/wiitoo/pkg/apierror"
-	"github.com/bedrivetech/wiitoo/chat/internal/service"
+	"github.com/bedrivetech/wiitoo/services/chat/internal/service"
 	"github.com/go-chi/chi/v5"
 )
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bedrivetech/wiitoo/email/internal/model"
+	"github.com/bedrivetech/wiitoo/services/email/internal/model"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

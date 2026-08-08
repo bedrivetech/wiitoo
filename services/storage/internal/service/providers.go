@@ -6,8 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/bedrivetech/wiitoo/pkg/storage"
-	"github.com/bedrivetech/wiitoo/storage/internal/model"
-	"github.com/bedrivetech/wiitoo/storage/internal/repository"
+	"github.com/bedrivetech/wiitoo/services/storage/internal/model"
+	"github.com/bedrivetech/wiitoo/services/storage/internal/repository"
 )
 
 // ProviderService handles CRUD operations for storage providers.

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bedrivetech/wiitoo/storage/internal/model"
+	"github.com/bedrivetech/wiitoo/services/storage/internal/model"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/bedrivetech/wiitoo/email/internal/model"
-	"github.com/bedrivetech/wiitoo/email/internal/service"
+	"github.com/bedrivetech/wiitoo/services/email/internal/model"
+	"github.com/bedrivetech/wiitoo/services/email/internal/service"
 	"github.com/bedrivetech/wiitoo/pkg/apierror"
 )
 

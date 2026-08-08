@@ -1,6 +1,6 @@
 # Wiitoo — Architecture & Decisions
 
-*Last updated: 2025-07-18*
+*Last updated: 2026-08-08*
 
 ## Vision
 
@@ -14,14 +14,14 @@ Live-first, VOD-native, creator-wealthy, AI-moderated, multi-platform by default
 | Decision | Choice | Rationale |
 |---|---|---|
 | **Backend language** | Go | Concurrency model (goroutines) perfect for video pipelines & chat. Single binary deploy. Battle-tested at Twitch/Youtube scale. |
-| **Go HTTP framework** | Chi (`go-chi/chi`) | 100% net/http compatible. Composable for microservices. Zero framework lock-in. Each microservice stays lean. |
+| **Go HTTP framework** | Chi (`go-chi/chi`) | 100% net/http compatible. Composable. Zero framework lock-in. |
 | **Database** | PostgreSQL via `pgx` | No-brainer. Battle-tested. Provider-agnostic (RDS, Cloud SQL, Supabase, self-hosted). |
 | **Queue** | Asynq (Redis-backed) | Go-native, simple, scales fine for async transcode/notifications/simulcast. |
 | **Cache / Pub/Sub** | Redis (interface-based) | Chat fan-out, rate limiting, presence, session cache. Provider-agnostic via interface. |
 | **Object Storage** | S3-compatible API (interface-based) | Provider-agnostic: S3, Cloudflare R2, GCS, MinIO, Backblaze B2. Swap easily. |
-| **Email** | SMTP (interface-based) | Provider-agnostic: Resend, SendGrid, SES, direct SMTP. |
+| **Email** | SMTP (interface-based) | Provider-agnostic: Brevo, SendPulse, Resend, SendGrid, SES, direct SMTP. |
 | **Video Pipeline (MVP)** | Cloud PaaS (Gcore or Cloudflare) | All video processing via cloud API calls — no self-hosted FFmpeg, no local transcoding. See `pkg/videopipeline`. |
-| **Streaming CDN** | Gcore CDN (native to VM's cloud provider) | Near-zero latency between compute and edge. Swap to Cloudflare/Bunny/Fastly later via DNS. |
+| **Streaming CDN** | Gcore CDN (native to VM's cloud provider) | Near-zero latency between compute and edge. Swap later via DNS. |
 | **Live Streaming Engine** | MediaMTX (RTMP/WHEP ingest) or LiveKit | Self-hosted on VM. Feeds into cloud CDN for edge delivery. |
 | **AI / Moderation** | Local Whisper + LLM (Ollama) + pgvector | Auto-captions, contextual moderation, embedding-based discovery. |
 | **OAuth library** | Goth or `golang.org/x/oauth2` | Multi-provider (Google, Twitch, Discord, GitHub, Apple). No managed auth vendor lock-in. |
@@ -31,11 +31,56 @@ Live-first, VOD-native, creator-wealthy, AI-moderated, multi-platform by default
 
 ---
 
+## Architecture Style: Modular Monolith (MVP → Scale)
+
+Services are organized as separate Go packages with clean boundaries, but **run as a single binary behind one port**. This avoids the operational overhead of 9 separate processes during the MVP phase while preserving the ability to split into independent microservices later.
+
+### Why Modular Monolith (Not Separate Microservices)
+
+- **Single binary** (~26MB) instead of 9 separate processes
+- **One port (:8080)** instead of 9 ports
+- **One Docker container** instead of 9
+- **Shared Postgres + Redis connections** (no duplication per service)
+- **Consistent middleware** applied once at the root level
+- **Clean package separation** preserved — each `services/{name}/api/` package is self-contained
+- **Future-proof**: Any service can be lifted out by copying its router setup into a new `cmd/server/main.go` — the split cost is ~5 lines of boilerplate
+
+### Entry Point
+
+**`cmd/wiitoo/main.go`** — single binary that:
+1. Creates shared PostgreSQL pool + Redis client
+2. Applies global middleware (CORS, logging, recovery, request ID, timeout, rate limiting)
+3. Calls each service's `Setup(r chi.Router, pool, rdb)` to mount routes
+4. Starts one HTTP server on `:8080`
+5. Handles graceful shutdown (drains all connections, runs cleanup functions)
+
+Individual `services/*/cmd/server/main.go` files remain for testing and future splitting.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                  wiitoo:8080 (single binary)              │
+│                                                           │
+│  /api/v1/auth/...           ← services/auth/api          │
+│  /api/v1/video/...          ← services/video/api         │
+│  /api/v1/stream/...         ← services/stream/api        │
+│  /api/v1/chat/...           ← services/chat/api          │
+│  /api/v1/payments/...       ← services/payment/api       │
+│  /api/v1/content/...        ← services/content/api       │
+│  /api/v1/notifications/...  ← services/notification/api  │
+│  /api/v1/admin/email/...    ← services/email/api         │
+│  /api/v1/admin/storage/...  ← services/storage/api       │
+│                                                           │
+│  /healthz                   ← health check                │
+└──────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Architecture Principles
 
 1. **Provider-agnostic abstractions** — Every external dependency (storage, cache, email, queue, video pipeline) has a Go interface. Changing providers is a config flag, not a rewrite.
 
-2. **Microservices, not monolith** — Small focused services (auth, video, chat, payment, moderation, simulcast). Each is independently deployable.
+2. **Modular monolith, microservices-ready** — Code is organized into bounded packages with public interfaces. Running as one binary today; splitting is a mechanical refactor, not an architectural one.
 
 3. **Simulcast is the wedge** — Built-in restream to YouTube/Twitch/Kick/Rumble. Lowers creator switching cost to zero. Your platform is the source of truth.
 
@@ -45,42 +90,9 @@ Live-first, VOD-native, creator-wealthy, AI-moderated, multi-platform by default
 
 ---
 
-## Service Boundaries (Planned)
-
-```
-┌──────────────────────────────────────────────────┐
-│                     Edge/CDN                      │
-│      (Gcore CDN → Cloudflare/Bunny later)        │
-└──────────────────────────────────────────────────┘
-                        │
-┌──────────────────────────────────────────────────┐
-│                   API Gateway                     │
-│           (Chi router, auth middleware)           │
-└──────────────────────────────────────────────────┘
-     │           │           │           │
-┌──────────┐ ┌────────┐ ┌────────┐ ┌──────────────┐
-│  Auth    │ │ Video  │ │ Chat   │ │  Payment     │
-│  Service │ │ Service│ │ Service│ │  Service     │
-│          │ │        │ │        │ │              │
-│ - OAuth  │ │ - RTMP │ │ - WS   │ │ - Paddle     │
-│ - JWT    │ │ - HLS  │ │ - Pub  │ │ - PayPal     │
-│ - Users  │ │ - Clip │ │ - Sub  │ │ - Crypto     │
-│ - Roles  │ │ - VOD  │ │ - Mod  │ │ - Tips       │
-│ - Subs   │ │        │ │        │ │ - Payouts    │
-│ - Ledger │ │        │ │        │ │              │
-└──────────┘ └────────┘ └────────┘ └──────────────┘
-     │           │           │           │
-┌──────────────────────────────────────────────────┐
-│                  Shared Layer                     │
-│   (Postgres, Redis, Asynq, S3-compat storage)    │
-└──────────────────────────────────────────────────┘
-```
-
----
-
 ## Payment Architecture — Paddle + PayPal + Crypto
 
-**No Stripe Connect.** Platform holds creator balances in an internal ledger and pays out manually. More engineering but more control.
+**No Stripe Connect** (not available in our country). Platform holds creator balances in an internal ledger and pays out manually. More engineering but more control.
 
 ### Flow
 ```
@@ -125,6 +137,8 @@ OTP (6-digit codes) for all user-facing verification flows. Links as backup for 
 - `VerifyOTP(userID, purpose, code)` → hash input → compare → delete on success
 - Backup link: `GET /auth/verify/{token}` where token is a crypto-random 32-byte URL-safe string
 
+---
+
 ## Interfaces (Provider-Agnostic Contracts)
 
 Will define in Go code: `ObjectStore`, `Cache`, `EmailSender`, `TaskQueue`, `Pipeline` (cloud video processing), `AIEmbedder`, `ChatStream`, `PaymentProvider`, `CryptoWallet`.
@@ -148,47 +162,54 @@ Will define in Go code: `ObjectStore`, `Cache`, `EmailSender`, `TaskQueue`, `Pip
 
 ### ✅ Shared Packages (`pkg/`)
 - [x] `pkg/apierror` — Standard API errors, response envelope, JSON helpers
-- [x] `pkg/storage` — ObjectStore interface + S3 implementation (multipart, presigned, list)
+- [x] `pkg/storage` — ObjectStore interface + 5 providers (S3, R2, Wasabi, Backblaze, IDrive e2) + multi-provider router (round-robin, geolocation, capacity)
 - [x] `pkg/cache` — Cache interface + Redis implementation (pub/sub included)
 - [x] `pkg/queue` — TaskQueue interface + Asynq implementation
-- [x] `pkg/email` — Sender interface + ConsoleSender + SMTPSender + Builder (templates)
+- [x] `pkg/email` — Sender interface + 4 providers (Brevo, SendPulse, SMTP, Resend) + MultiProvider (primary-fallback, weighted round-robin)
 - [x] `pkg/config` — Environment variable loading with defaults
-- [x] `pkg/middleware` — RequestLogger, Recovery, ServiceAuth, Auth, CORS
+- [x] `pkg/middleware` — RequestLogger, Recovery, Auth (JWT), CORS, RateLimiter, ErrorHandler
 - [x] `pkg/database` — PGX pool creation helpers
 - [x] `pkg/payment` — Provider + PayoutProvider interfaces; Ledger interface
 - [x] `pkg/payment/provider` — PaddleProvider, PayPalProvider (+ payouts), CryptoProvider (USDC/Solana)
-- [x] `pkg/transcode` — Transcoder interface, Presets, all request/response types
+- [x] `pkg/videopipeline` — Pipeline interface + 2 cloud providers (Gcore, Cloudflare Stream)
 - [x] `pkg/stream` — Stream, ChatMessage, Category, IngestServer, AnalyticsSnapshot types
+- [x] `pkg/adminhandler` — Pagination, search, sort helpers for admin CRUD
 
-### ✅ Services
-- [x] **Auth** (8081) — Register, login, JWT, OAuth (Google/Twitch/Discord via Goth), OTP verification, password reset, profile, rate limiting
-- [x] **Video** (8082) — Upload, presigned URLs, transcode to HLS/MP4, clip, thumbnail, presets
-- [x] **Chat** (8083) — WebSocket real-time, Redis pub/sub fan-out, history, timeout/ban, message persistence
-- [x] **Payment** (8084) — Paddle subscriptions, PayPal tips/payouts, USDC micro-tips, creator ledger, payout engine
-- [x] **Stream** (8085) — Stream CRUD, RTMP ingest management, simulcast config, MediaMTX webhooks, analytics, categories
-- [x] **Content** (8086) — Category CRUD, search (pg_trgm), trending, recommendations, content reporting
-- [x] **Notification** (8087) — In-app notifications, preferences, unread counts, mark read
+### ✅ Services (all within single module `github.com/bedrivetech/wiitoo`)
+- [x] **Auth** — Register, login, JWT (access+refresh with rotation), OTP verify, password reset, OAuth (Google+Twitch), profile mgmt, rate limiting, email change
+- [x] **Video** — Upload, presigned URLs, cloud video pipeline (Gcore/Cloudflare), clip, thumbnail
+- [x] **Chat** — WebSocket real-time, Redis pub/sub fan-out, history, timeout/ban, message persistence
+- [x] **Payment** — Paddle subscriptions, PayPal tips/payouts, USDC micro-tips, creator ledger, payout engine
+- [x] **Stream** — Stream CRUD, RTMP ingest management, simulcast config, MediaMTX webhooks, analytics, categories
+- [x] **Content** — Category CRUD, search (pg_trgm), trending, recommendations, content reporting
+- [x] **Notification** — In-app notifications, preferences, unread counts, mark read
+- [x] **Email (admin)** — Providers CRUD, templates CRUD, send/queue/history, full admin panel
+- [x] **Storage (admin)** — Providers CRUD, buckets CRUD, routing rules, multi-strategy assignment
+
+### ✅ Admin Panel (Next.js + Refine + Ant Design)
+- [x] **~50 pages across 15 resources**
+- [x] Users, videos, streams, categories, subscriptions, transactions, payouts, reports, creator verification, chat messages
+- [x] Email providers, email templates, email logs, storage providers, storage buckets, storage routing
+- [x] Brand theme (violet/cyan palette, dark mode, Cmd+K search, dashboard with KPIs)
+- [x] Bulk operations, CSV export, status tagging, confirmation flows
 
 ### ✅ Infrastructure
-- [x] `go.work` — Go workspace (pkg + all services)
-- [x] `Dockerfile` — Multi-stage scratch build per service (~8MB)
-- [x] `deploy/docker-compose.yaml` — Postgres + Redis + MediaMTX + 7 services + Nginx reverse proxy
+- [x] `Dockerfile` — Multi-stage Alpine build (~26MB binary)
+- [x] `deploy/docker-compose.yaml` — Postgres + Redis + MediaMTX + Wiitoo API (+ Nginx)
 - [x] `deploy/nginx/default.conf` — Routing, WebSocket upgrade, HLS CORS
 - [x] `deploy/mtx/mediamtx.yml` — RTMP ingest, HLS, WebRTC, webhook hooks
-- [x] `deploy/scripts/init-db.sh` — Full schema (users, oauth, refresh tokens, videos, streams, simulcast, analytics, chat, subscriptions, transactions, ledger, payouts, categories, reports, notifications, prefs) + seed data
-- [x] `Makefile` — dev, db-up, build, test, fmt, vet, up, down, logs, ci
+- [x] `deploy/migrations/` — 25 migration pairs (001-025), `migrate.sh` runner
+- [x] `deploy/scripts/init-db.sh` — Full schema + seed data
 - [x] `.github/workflows/ci.yaml` — Lint, test, build, Docker build on push/PR
-- [x] `ARCHITECTURE.md` — All decisions recorded (this file)
 - [x] `README.md` — Full docs: architecture, services, API overview, quick start, env vars
 
 ### Remaining (Phase 2)
 - [ ] End-to-end integration tests
 - [ ] AI moderation service (local LLM + pgvector)
-- [ ] Creator dashboard with analytics
-- [ ] Admin panel for moderation
+- [ ] Main platform frontend (player + chat + creator dashboard)
+- [ ] Simulcast bridge implementation (RTMP relay to YouTube/Twitch/Kick)
 - [ ] Mobile push notifications
 - [ ] Self-hosted cloud pipeline (Phase 3, only if PaaS costs exceed infra cost)
 - [ ] Edge caching configuration
-- [ ] Tenant/enterprise features
 
-*All core decisions baked in. Framework lock-in avoided. Provider-agnostic from day one.*
+*All core decisions baked in. Framework lock-in avoided. Provider-agnostic from day one. Modular monolith — microservices-ready when needed.*

@@ -1,22 +1,5 @@
 version: "3.9"
 
-x-service-base: &service-base
-  build:
-    context: ../..
-    dockerfile: services/service/Dockerfile
-  networks:
-    - wiitoo
-  depends_on:
-    postgres:
-      condition: service_healthy
-    redis:
-      condition: service_started
-  environment:
-    &service-env
-    DATABASE_URL: postgres://wiitoo:wiitoo_change_me@postgres:5432/wiitoo?sslmode=disable
-    REDIS_URL: redis://redis:6379/0
-    ALLOWED_ORIGINS: "*"
-
 services:
   # ===== Infrastructure =====
   postgres:
@@ -64,96 +47,41 @@ services:
       redis:
         condition: service_started
 
-  # ===== Wiitoo Services =====
-  auth:
-    <<: *service-base
+  # ===== Wiitoo Monolith API =====
+  wiitoo-api:
     build:
-      context: ../..
-      dockerfile: services/auth/Dockerfile
+      context: ..
+      dockerfile: Dockerfile
     ports:
-      - "8081:8080"
+      - "8080:8080"
     environment:
-      <<: *service-env
+      DATABASE_URL: postgres://wiitoo:wiitoo_change_me@postgres:5432/wiitoo?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      ALLOWED_ORIGINS: "*"
       PORT: "8080"
+      # Auth config
       JWT_SECRET: "dev-jwt-secret-change-in-production"
       REDIS_PREFIX: "auth"
-
-  video:
-    <<: *service-base
-    build:
-      context: ../..
-      dockerfile: services/video/Dockerfile
-    ports:
-      - "8082:8080"
-    environment:
-      <<: *service-env
-      PORT: "8080"
+      # Video config
       STORAGE_ENDPOINT: ""
       STORAGE_REGION: "auto"
-      TRANSCODE_PROVIDER: "cloudflare"
-
-  chat:
-    <<: *service-base
-    build:
-      context: ../..
-      dockerfile: services/chat/Dockerfile
-    ports:
-      - "8083:8080"
-    environment:
-      <<: *service-env
-      PORT: "8080"
-      REDIS_PREFIX: "chat"
-
-  payment:
-    <<: *service-base
-    build:
-      context: ../..
-      dockerfile: services/payment/Dockerfile
-    ports:
-      - "8084:8080"
-    environment:
-      <<: *service-env
-      PORT: "8080"
+      VIDEO_PROVIDER: "cloudflare"
+      # Payment config
       PADDLE_ENV: "sandbox"
       PAYPAL_ENV: "sandbox"
       PAYOUT_THRESHOLD: "50"
       PLATFORM_FEE_PCT: "10"
-
-  stream:
-    <<: *service-base
-    build:
-      context: ../..
-      dockerfile: services/stream/Dockerfile
-    ports:
-      - "8085:8080"
-    environment:
-      <<: *service-env
-      PORT: "8080"
+      # Stream config
       RTMP_LISTEN: ":1935"
       MEDIAMTX_API: "http://mediamtx:9997"
       SIMULCAST_ENABLED: "true"
-
-  content:
-    <<: *service-base
-    build:
-      context: ../..
-      dockerfile: services/content/Dockerfile
-    ports:
-      - "8086:8080"
-    environment:
-      <<: *service-env
-      PORT: "8080"
-
-  notification:
-    <<: *service-base
-    build:
-      context: ../..
-      dockerfile: services/notification/Dockerfile
-    ports:
-      - "8087:8080"
-    environment:
-      <<: *service-env
-      PORT: "8080"
+    networks:
+      - wiitoo
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   # ===== Edge / Reverse Proxy =====
   nginx:
@@ -166,13 +94,7 @@ services:
     networks:
       - wiitoo
     depends_on:
-      - auth
-      - video
-      - chat
-      - payment
-      - stream
-      - content
-      - notification
+      - wiitoo-api
 
 volumes:
   pgdata:
@@ -180,5 +102,5 @@ volumes:
   hlsdata:
 
 networks:
-  fusion:
+  wiitoo:
     driver: bridge

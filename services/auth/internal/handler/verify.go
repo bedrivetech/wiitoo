@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/bedrivetech/wiitoo/auth/internal/model"
-	"github.com/bedrivetech/wiitoo/auth/internal/repository"
-	"github.com/bedrivetech/wiitoo/auth/internal/service"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/repository"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/service"
 )
 
 // VerifyHandler handles email verification via OTP.

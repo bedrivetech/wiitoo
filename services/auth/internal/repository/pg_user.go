@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bedrivetech/wiitoo/auth/internal/model"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

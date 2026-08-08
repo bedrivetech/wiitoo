@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bedrivetech/wiitoo/auth/internal/config"
-	"github.com/bedrivetech/wiitoo/auth/internal/model"
-	"github.com/bedrivetech/wiitoo/auth/internal/repository"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/config"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/model"
+	"github.com/bedrivetech/wiitoo/services/auth/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"

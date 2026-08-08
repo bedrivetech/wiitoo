@@ -6,7 +6,7 @@ import (
 
 	"github.com/bedrivetech/wiitoo/pkg/adminhandler"
 	"github.com/bedrivetech/wiitoo/pkg/apierror"
-	"github.com/bedrivetech/wiitoo/video/internal/repository"
+	"github.com/bedrivetech/wiitoo/services/video/internal/repository"
 	"github.com/go-chi/chi/v5"
 )
 
