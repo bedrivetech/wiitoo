@@ -23,6 +23,22 @@
   },
   "dynamicRoutes": [
     {
+      "page": "/browse/[category]",
+      "regex": "^/browse/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPcategory": "nxtPcategory"
+      },
+      "namedRegex": "^/browse/(?<nxtPcategory>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/creator/[username]",
+      "regex": "^/creator/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPusername": "nxtPusername"
+      },
+      "namedRegex": "^/creator/(?<nxtPusername>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/watch/[id]",
       "regex": "^/watch/([^/]+?)(?:/)?$",
       "routeKeys": {
@@ -49,6 +65,12 @@
       "regex": "^/_not\\-found(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/browse",
+      "regex": "^/browse(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/browse(?:/)?$"
     }
   ],
   "dataRoutes": [],

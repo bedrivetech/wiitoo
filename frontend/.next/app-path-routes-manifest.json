@@ -1,4 +1,8 @@
 {
+  "/(main)/browse/[category]/page": "/browse/[category]",
+  "/(main)/browse/page": "/browse",
+  "/(main)/creator/[username]/page": "/creator/[username]",
+  "/(main)/page": "/",
   "/_global-error/page": "/_global-error",
   "/_not-found/page": "/_not-found",
   "/page": "/",
