@@ -37,8 +37,9 @@ const WiitooPlayer = React.memo(function WiitooPlayer({
   const [isLoading, setIsLoading] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
-  const toggleChat = useUiStore((s) => s.toggleChat);
-  const isChatOpen = useUiStore((s) => s.isChatOpen);
+  const toggleChat = React.useCallback(() => {
+    useUiStore.getState().toggleChat();
+  }, []);
 
   /* ── Init video.js ── */
   useEffect(() => {
@@ -410,11 +411,7 @@ const WiitooPlayer = React.memo(function WiitooPlayer({
             {isLive && (
               <button
                 onClick={toggleChat}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-tiny font-medium transition-all duration-200 ${
-                  isChatOpen
-                    ? 'bg-brand-600/20 text-brand-400 border border-brand-600/30'
-                    : 'text-white/70 hover:text-white hover:bg-white/5 border border-transparent'
-                }`}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-tiny font-medium transition-all duration-200 text-white/70 hover:text-white hover:bg-white/5 border border-transparent"
                 aria-label="Toggle chat"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

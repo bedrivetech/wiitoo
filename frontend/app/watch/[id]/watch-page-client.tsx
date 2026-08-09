@@ -157,6 +157,48 @@ const INLINE_CHAT: ChatMessage[] = [
 /* ── Related videos (mock) ── */
 const relatedVideos = allMockVideos.filter((v) => v.id !== MOCK_DATA.video.id).slice(0, 8);
 
+/* ── Mini Player (floating, mounts only when scrolled) ── */
+function MiniPlayer({ video }: { video: WatchPageData['video'] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    gsap.fromTo(
+      containerRef.current,
+      { opacity: 0, scale: 0.85, y: 40 },
+      { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: 'power3.out', overwrite: 'auto' }
+    );
+  }, []);
+
+  return (
+    <div ref={containerRef} className="fixed bottom-4 right-4 z-50 w-[320px] md:w-[360px]">
+      <div className="rounded-xl overflow-hidden border-2 border-bg-border shadow-2xl">
+        <WiitooPlayer
+          src={video.hlsUrl}
+          poster={video.posterUrl}
+          isLive={video.isLive}
+          title={video.title}
+          liveViewers={video.liveViewers}
+        />
+      </div>
+      <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+        <div className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5">
+          <span className="text-white text-[10px] font-medium truncate block max-w-[200px]">
+            {video.title}
+          </span>
+        </div>
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="bg-black/60 backdrop-blur-sm rounded-md p-1 hover:bg-black/80 transition-colors"
+          aria-label="Go to player"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M19 15l-7-7-7 7" /></svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Inline Chat Drawer ── */
 function ChatDrawerInline({ onClose }: { onClose: () => void }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -307,7 +349,6 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
 
   /* ── GSAP refs ── */
   const inlineChatRef = useRef<HTMLDivElement>(null);
-  const miniPlayerRef = useRef<HTMLDivElement>(null);
 
   /* ── Animate inline chat on toggle ── */
   useEffect(() => {
@@ -321,20 +362,6 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
       overwrite: 'auto',
     });
   }, [isChatOpen]);
-
-  /* ── Animate mini-player on toggle ── */
-  useEffect(() => {
-    if (!miniPlayerRef.current) return;
-    gsap.to(miniPlayerRef.current, {
-      opacity: showMiniPlayer ? 1 : 0,
-      scale: showMiniPlayer ? 1 : 0.85,
-      y: showMiniPlayer ? 0 : 40,
-      duration: 0.3,
-      ease: 'power3.out',
-      pointerEvents: showMiniPlayer ? 'all' : 'none',
-      overwrite: 'auto',
-    });
-  }, [showMiniPlayer]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -491,32 +518,10 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
         </div>
       </main>
 
-      {/* ── Floating Mini-Player — GSAP */}
-      <div ref={miniPlayerRef} className="fixed bottom-4 right-4 z-50 w-[320px] md:w-[360px]" style={{ opacity: 0, scale: '0.85', translate: '0 40px' }}>
-        <div className="rounded-xl overflow-hidden border-2 border-bg-border shadow-2xl">
-          <WiitooPlayer
-            src={video.hlsUrl}
-            poster={video.posterUrl}
-            isLive={video.isLive}
-            title={video.title}
-            liveViewers={video.liveViewers}
-          />
-        </div>
-        <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
-          <div className="bg-black/60 backdrop-blur-sm rounded-md px-2 py-0.5">
-            <span className="text-white text-[10px] font-medium truncate block max-w-[200px]">
-              {video.title}
-            </span>
-          </div>
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="bg-black/60 backdrop-blur-sm rounded-md p-1 hover:bg-black/80 transition-colors"
-            aria-label="Go to player"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M19 15l-7-7-7 7" /></svg>
-          </button>
-        </div>
-      </div>
+      {/* ── Floating Mini-Player — only rendered when needed */}
+      {showMiniPlayer && (
+        <MiniPlayer video={video} />
+      )}
 
       {/* ── Mobile/tablet chat drawer ── */}
       <ChatDrawer />
