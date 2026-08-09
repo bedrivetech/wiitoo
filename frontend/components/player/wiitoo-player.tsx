@@ -20,9 +20,8 @@ const WiitooPlayer = React.memo(function WiitooPlayer({
   title,
   liveViewers,
 }: WiitooPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [playing, setPlaying] = useState(false);
@@ -37,17 +36,23 @@ const WiitooPlayer = React.memo(function WiitooPlayer({
   const [isLoading, setIsLoading] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
-  const toggleChat = React.useCallback(() => {
+  const toggleChat = useCallback(() => {
     useUiStore.getState().toggleChat();
   }, []);
 
   /* ── Init video.js ── */
   useEffect(() => {
-    if (!videoRef.current || playerRef.current) return;
+    if (!containerRef.current || playerRef.current) return;
 
     setIsLoading(true);
 
-    const player = videojs(videoRef.current, {
+    // Create <video> element imperatively — React never renders it
+    const videoEl = document.createElement('video');
+    videoEl.className = 'w-full h-full object-contain wiitoo-player-skin';
+    videoEl.setAttribute('playsInline', '');
+    containerRef.current.appendChild(videoEl);
+
+    const player = videojs(videoEl, {
       controls: false,
       autoplay: false,
       muted: false,
@@ -113,34 +118,42 @@ const WiitooPlayer = React.memo(function WiitooPlayer({
         playerRef.current.dispose();
         playerRef.current = null;
       }
+      // Remove the imperative video element
+      if (containerRef.current && videoEl.parentNode === containerRef.current) {
+        containerRef.current.removeChild(videoEl);
+      }
     };
   }, [src, poster, isLive]);
+
+  // Refs that don't need to be in deps
+  const playingRef = useRef(playing);
+  playingRef.current = playing;
 
   const hideControlsAfterDelay = useCallback(() => {
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     hideTimerRef.current = setTimeout(() => {
-      if (playing) setShowControls(false);
+      if (playingRef.current) setShowControls(false);
     }, 3000);
-  }, [playing]);
+  }, []);
 
   const showControlsTemporarily = useCallback(() => {
     setShowControls(true);
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    if (playing) {
+    if (playingRef.current) {
       hideTimerRef.current = setTimeout(() => setShowControls(false), 3000);
     }
-  }, [playing]);
+  }, []);
 
   /* ── Actions ── */
   const togglePlay = useCallback(() => {
     if (!playerRef.current) return;
-    if (playing) {
+    if (playingRef.current) {
       playerRef.current.pause();
     } else {
       setIsLoading(true);
       playerRef.current.play();
     }
-  }, [playing]);
+  }, []);
 
   const toggleMute = useCallback(() => {
     if (!playerRef.current) return;
@@ -186,7 +199,7 @@ const WiitooPlayer = React.memo(function WiitooPlayer({
       className="relative aspect-video bg-black overflow-hidden group rounded-xl"
       onMouseMove={showControlsTemporarily}
       onMouseEnter={() => setShowControls(true)}
-      onMouseLeave={() => playing && setShowControls(false)}
+      onMouseLeave={() => playingRef.current && setShowControls(false)}
       onDoubleClick={() => {
         if (!playerRef.current) return;
         if (playerRef.current.isFullscreen()) playerRef.current.exitFullscreen();
@@ -229,12 +242,7 @@ const WiitooPlayer = React.memo(function WiitooPlayer({
         </div>
       )}
 
-      {/* ── <video> element ── */}
-      <video
-        ref={videoRef}
-        className="w-full h-full object-contain wiitoo-player-skin"
-        playsInline
-      />
+      {/* ── NO <video> JSX — video element is created imperatively in useEffect ── */}
 
       {/* ── Top-left: live badge ── */}
       {isLive && (
