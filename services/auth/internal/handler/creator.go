@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/bedrivetech/wiitoo/services/auth/internal/middleware"
 	"github.com/bedrivetech/wiitoo/services/auth/internal/model"

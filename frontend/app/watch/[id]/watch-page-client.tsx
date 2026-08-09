@@ -434,25 +434,6 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
 
   return (
     <div className="min-h-screen bg-bg-base">
-      {/* ── Nav bar ── */}
-      <header className="h-14 border-b border-bg-border flex items-center px-4 md:px-6 gap-4">
-        <a href="/" className="text-title-3 text-gradient-brand font-bold tracking-tight hover:opacity-80 transition-opacity">
-          wiitoo
-        </a>
-        <div className="flex-1 flex justify-center max-w-xl mx-auto">
-          <div className="w-full max-w-md flex items-center bg-bg-raised rounded-lg px-3 py-1.5 border border-bg-border">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-muted shrink-0">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input type="text" placeholder="Search" className="flex-1 bg-transparent text-small text-text-primary placeholder-text-muted px-2 py-0.5 focus:outline-none" />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <a href="/auth" className="px-3 py-1.5 text-tiny font-medium text-text-primary bg-bg-raised rounded-lg border border-bg-border hover:bg-bg-hover transition-colors">Log in</a>
-          <a href="/auth" className="px-3 py-1.5 text-tiny font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition-colors">Sign up</a>
-        </div>
-      </header>
-
       {/* ── Keyboard shortcut hint (dismissable) ── */}
       <div className="hidden md:flex items-center justify-center gap-1 py-1 text-tiny text-text-muted/50 bg-bg-base border-b border-bg-border/30">
         <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">K</kbd> play/pause ·
@@ -462,57 +443,56 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
         <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">0-9</kbd> seek %
       </div>
 
-      {/* ── Player + Related sidebar layout ── */}
-      <main className="mx-auto max-w-[1360px]">
-        <div className="flex gap-6">
-          {/* Main content */}
+      {/* ═══════════════════════════════════════
+         FULL-WIDTH PLAYER — edge to edge
+         ═══════════════════════════════════════ */}
+      <div ref={playerContainerRef} className="relative w-full bg-black">
+        <WiitooPlayer
+          src={video.hlsUrl}
+          poster={video.posterUrl}
+          isLive={video.isLive}
+          title={video.title}
+          liveViewers={video.liveViewers}
+        />
+
+        {/* Desktop inline chat — overlays player, GSAP toggled */}
+        <div ref={inlineChatRef} className="hidden md:block absolute right-0 top-0 bottom-0 z-10 pointer-events-none" style={{ opacity: 0, transform: 'translateX(16px)' }}>
+          <div className="w-[360px] h-full chat-panel overflow-hidden border-l border-white/10 pointer-events-auto">
+            <ChatDrawerInline onClose={closeChat} />
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════
+         CONTENT BELOW — two-column layout
+         ═══════════════════════════════════════ */}
+      <main className="mx-auto max-w-[1360px] px-4 md:px-6 pt-4 md:pt-6">
+        <div className="flex flex-col xl:flex-row gap-6">
+          {/* Main column — title, info, description, comments */}
           <div className="flex-1 min-w-0">
-            {/* Player area */}
-            <div ref={playerContainerRef} className="relative">
-              <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
-                <div className="px-0 md:px-6 pt-0 md:pt-6">
-                  <WiitooPlayer
-                    src={video.hlsUrl}
-                    poster={video.posterUrl}
-                    isLive={video.isLive}
-                    title={video.title}
-                    liveViewers={video.liveViewers}
-                  />
-                </div>
-              </div>
-
-              {/* Desktop inline chat — GSAP */}
-              <div ref={inlineChatRef} className="hidden md:block absolute right-0 top-0 h-full" style={{ opacity: 0, transform: 'translateX(16px)' }}>
-                <div className="w-[360px] h-full chat-panel rounded-xl overflow-hidden border border-bg-border">
-                  <ChatDrawerInline onClose={closeChat} />
-                </div>
-              </div>
-            </div>
-
-            {/* Content below player */}
-            <div className={isChatOpen ? 'md:pr-[360px]' : ''}>
-              <div className={showMiniPlayer ? 'opacity-30 pointer-events-none select-none' : ''}>
-                <TitleRow title={video.title} isLive={video.isLive} liveViewers={video.liveViewers} />
-                <InfoRow
-                  creator={video.creator}
-                  views={video.views}
-                  likes={video.likes}
-                  publishedAt={video.publishedAt}
-                />
-                <Description text={video.description} />
-                <CommentsSection
-                  comments={comments}
-                  totalComments={comments.length + 47}
-                  onSeekTo={handleSeekTo}
-                />
-              </div>
+            <div className={showMiniPlayer ? 'opacity-30 pointer-events-none select-none' : 'space-y-4'}>
+              <TitleRow title={video.title} isLive={video.isLive} liveViewers={video.liveViewers} />
+              <InfoRow
+                creator={video.creator}
+                views={video.views}
+                likes={video.likes}
+                publishedAt={video.publishedAt}
+              />
+              <Description text={video.description} />
+              <CommentsSection
+                comments={comments}
+                totalComments={comments.length + 47}
+                onSeekTo={handleSeekTo}
+              />
             </div>
           </div>
 
-          {/* Related videos sidebar (desktop, hidden when chat is open) */}
+          {/* Related videos sidebar (desktop) */}
           {!isChatOpen && (
-            <div className="hidden xl:block w-[360px] shrink-0 pt-6 pr-6">
-              <RelatedSidebar />
+            <div className="hidden xl:block w-[360px] shrink-0">
+              <div className="sticky top-24">
+                <RelatedSidebar />
+              </div>
             </div>
           )}
         </div>
