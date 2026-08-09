@@ -35,7 +35,7 @@ function timeAgo(dateStr: string): string {
 
 /* ── Thumbnail placeholder ── */
 
-function ThumbnailPlaceholder({ title, isLive }: { title: string; isLive: boolean }) {
+export function ThumbnailPlaceholder({ title, isLive }: { title: string; isLive: boolean }) {
   const hue = title.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
   return (
     <div

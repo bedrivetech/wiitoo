@@ -2,17 +2,38 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import gsap from 'gsap';
+import Link from 'next/link';
+import Header from '@/components/layout/header';
 import { WiitooPlayer } from '@/components/player/wiitoo-player';
 import { TitleRow } from '@/components/watch/title-row';
 import { InfoRow } from '@/components/watch/info-row';
 import { Description } from '@/components/watch/description';
 import { CommentsSection } from '@/components/watch/comments-section';
 import { ChatDrawer } from '@/components/watch/chat-drawer';
-import ContentCard from '@/components/browse/content-card';
+import { ThumbnailPlaceholder } from '@/components/browse/content-card';
 import { useUiStore } from '@/lib/store';
 import { videos as allMockVideos } from '@/lib/mock-data';
 import { WatchPageSkeleton } from '@/components/ui/skeleton';
-import type { WatchPageData, ChatMessage } from '@/lib/types';
+import type { WatchPageData, ChatMessage, VideoData } from '@/lib/types';
+
+/* ── Helpers ── */
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toString();
+}
+
+function timeAgo(dateStr: string): string {
+  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (seconds < 60) return 'just now';
+  const m = Math.floor(seconds / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
 
 /* ── Mock data ── */
 const MOCK_DATA: WatchPageData = {
@@ -39,7 +60,7 @@ const MOCK_DATA: WatchPageData = {
     duration: 3720,
     isLive: true,
     liveViewers: 4321,
-    description: `This is the moment everyone has been waiting for. 
+    description: `This is the moment everyone has been waiting for.
 
 After months of speculation, three of the biggest creators across gaming, music, and art have come together for a live collaboration unlike anything before.
 
@@ -154,10 +175,70 @@ const INLINE_CHAT: ChatMessage[] = [
   { id: 'i8', username: 'big_spender', displayName: 'Big Spender', text: 'deserves way more viewers honestly', isSuperchat: true, superchatAmount: 15, timestamp: Date.now() - 1000 },
 ];
 
-/* ── Related videos (mock) ── */
+/* ── Related videos ── */
 const relatedVideos = allMockVideos.filter((v) => v.id !== MOCK_DATA.video.id).slice(0, 8);
 
-/* ── Mini Player (floating, mounts only when scrolled) ── */
+/* ── Horizontal Related Video Card (YouTube-style) ── */
+function RelatedVideoCard({ video }: { video: VideoData }) {
+  const [hovered, setHovered] = useState(false);
+  const hoverTimer = useRef<any>(null);
+  const hue = video.title.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
+
+  return (
+    <Link
+      href={video.isLive ? `/watch/${video.id}?live=1` : `/watch/${video.id}`}
+      className="group flex gap-2 rounded-lg transition-colors hover:bg-bg-hover p-1 -mx-1"
+      onMouseEnter={() => {
+        hoverTimer.current = setTimeout(() => setHovered(true), 200);
+      }}
+      onMouseLeave={() => {
+        clearTimeout(hoverTimer.current);
+        setHovered(false);
+      }}
+    >
+      {/* Thumbnail — fixed 168px wide */}
+      <div className="relative w-[168px] shrink-0">
+        <div className="aspect-video rounded-lg overflow-hidden">
+          {video.posterUrl ? (
+            <img
+              src={video.posterUrl}
+              alt={video.title}
+              className={`w-full h-full object-cover rounded-lg transition-transform duration-300 ${hovered ? 'scale-105' : ''}`}
+            />
+          ) : (
+            <ThumbnailPlaceholder title={video.title} isLive={video.isLive} />
+          )}
+        </div>
+        {/* Duration badge */}
+        {!video.isLive && video.duration && (
+          <span className="absolute bottom-1 right-1 bg-black/85 text-white text-[10px] font-medium px-1 py-[1px] rounded leading-tight">
+            {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+          </span>
+        )}
+        {/* Live badge */}
+        {video.isLive && (
+          <span className="absolute bottom-1 left-1 bg-live text-white text-[10px] font-bold px-1.5 py-[1px] rounded leading-tight flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            LIVE
+          </span>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <h4 className="text-small font-medium text-text-primary line-clamp-2 leading-snug mb-1">
+          {video.title}
+        </h4>
+        <p className="text-tiny text-text-muted truncate">{video.creator.displayName}</p>
+        <p className="text-tiny text-text-muted">
+          {formatCount(video.views)} views &middot; {timeAgo(video.publishedAt)}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+/* ── Mini Player ── */
 function MiniPlayer({ video }: { video: WatchPageData['video'] }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -253,17 +334,13 @@ function ChatDrawerInline({ onClose }: { onClose: () => void }) {
   );
 }
 
-/* ── Related videos sidebar (desktop) ── */
+/* ── Related videos sidebar ── */
 function RelatedSidebar() {
   return (
-    <div className="space-y-3">
-      <h3 className="text-base font-semibold text-text-primary px-1">Related videos</h3>
+    <div className="space-y-1">
+      <h3 className="text-base font-semibold text-text-primary mb-3">Related</h3>
       {relatedVideos.map((v) => (
-        <div key={v.id} className="flex gap-2">
-          <div className="w-[168px] shrink-0">
-            <ContentCard video={v} size="standard" />
-          </div>
-        </div>
+        <RelatedVideoCard key={v.id} video={v} />
       ))}
     </div>
   );
@@ -273,7 +350,6 @@ function RelatedSidebar() {
 function useVideoKeyboardShortcuts(togglePlay: () => void, seekBy: (s: number) => void, toggleFullscreen: () => void, toggleMute: () => void) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
 
@@ -303,24 +379,15 @@ function useVideoKeyboardShortcuts(togglePlay: () => void, seekBy: (s: number) =
           break;
         case ',':
           e.preventDefault();
-          seekBy(-1); // Slow rewind
+          seekBy(-1);
           break;
         case '.':
           e.preventDefault();
-          seekBy(1); // Slow forward
+          seekBy(1);
           break;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
           e.preventDefault();
-          // Seek to 0%, 10%, 20%... of the video
           const pct = parseInt(e.key) / 10;
           const vid = document.querySelector('video');
           if (vid && vid.duration) vid.currentTime = pct * vid.duration;
@@ -341,7 +408,7 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
   const comments = MOCK_DATA.comments;
   const isChatOpen = useUiStore((s) => s.isChatOpen);
   const closeChat = useUiStore((s) => s.closeChat);
-  const [loading] = useState(false); // Will be true when real API loads
+  const [loading] = useState(false);
 
   /* ── Mini-player state ── */
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -373,24 +440,7 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  /* ── Player ref for keyboard shortcuts ── */
-  const playerApiRef = useRef<{
-    togglePlay: () => void;
-    seekBy: (s: number, pct?: boolean) => void;
-    toggleFullscreen: () => void;
-    toggleMute: () => void;
-  }>({
-    togglePlay: () => {},
-    seekBy: () => {},
-    toggleFullscreen: () => {},
-    toggleMute: () => {},
-  });
-
-  // We expose these via the player component's parent interaction.
-  // For now, tap into the player controls by simulating key events.
-  // Actually, we can use the video.js player ref from WiitooPlayer.
-  // Since WiitooPlayer manages its own refs internally, we need to
-  // dispatch events on the video element as fallback.
+  /* ── Player keyboard shortcuts ── */
   const togglePlay = useCallback(() => {
     const vid = document.querySelector('video');
     if (!vid) return;
@@ -398,14 +448,10 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
     else vid.pause();
   }, []);
 
-  const seekBy = useCallback((seconds: number, isPercentage?: boolean) => {
+  const seekBy = useCallback((seconds: number) => {
     const vid = document.querySelector('video');
     if (!vid || !vid.duration) return;
-    if (isPercentage) {
-      vid.currentTime = (seconds / 100) * vid.duration;
-    } else {
-      vid.currentTime = Math.max(0, Math.min(vid.duration, vid.currentTime + seconds));
-    }
+    vid.currentTime = Math.max(0, Math.min(vid.duration, vid.currentTime + seconds));
   }, []);
 
   const toggleFullscreen = useCallback(() => {
@@ -434,8 +480,15 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
 
   return (
     <div className="min-h-screen bg-bg-base">
-      {/* ── Keyboard shortcut hint (dismissable) ── */}
-      <div className="hidden md:flex items-center justify-center gap-1 py-1 text-tiny text-text-muted/50 bg-bg-base border-b border-bg-border/30">
+      {/* ═══════════════════════════════════════
+         HEADER — always present, like YouTube
+         ═══════════════════════════════════════ */}
+      <Header />
+
+      {/* ═══════════════════════════════════════
+         KEYBOARD SHORTCUT HINT BAR
+         ═══════════════════════════════════════ */}
+      <div className="hidden md:flex items-center justify-center gap-1 py-1 text-tiny text-text-muted/40 bg-bg-base border-b border-bg-border/20">
         <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">K</kbd> play/pause ·
         <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">J</kbd> <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">L</kbd> seek ·
         <kbd className="px-1 py-0.5 rounded bg-bg-raised text-[10px]">F</kbd> fullscreen ·
@@ -444,33 +497,43 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
       </div>
 
       {/* ═══════════════════════════════════════
-         FULL-WIDTH PLAYER — edge to edge
+         PLAYER — centered 1280px max, full-width black bg
          ═══════════════════════════════════════ */}
-      <div ref={playerContainerRef} className="relative w-full bg-black">
-        <WiitooPlayer
-          src={video.hlsUrl}
-          poster={video.posterUrl}
-          isLive={video.isLive}
-          title={video.title}
-          liveViewers={video.liveViewers}
-        />
+      <div className="bg-black">
+        <div
+          ref={playerContainerRef}
+          className="relative mx-auto"
+          style={{ maxWidth: '1280px' }}
+        >
+          <WiitooPlayer
+            src={video.hlsUrl}
+            poster={video.posterUrl}
+            isLive={video.isLive}
+            title={video.title}
+            liveViewers={video.liveViewers}
+          />
 
-        {/* Desktop inline chat — overlays player, GSAP toggled */}
-        <div ref={inlineChatRef} className="hidden md:block absolute right-0 top-0 bottom-0 z-10 pointer-events-none" style={{ opacity: 0, transform: 'translateX(16px)' }}>
-          <div className="w-[360px] h-full chat-panel overflow-hidden border-l border-white/10 pointer-events-auto">
-            <ChatDrawerInline onClose={closeChat} />
+          {/* Desktop inline chat — overlays player, GSAP toggled */}
+          <div
+            ref={inlineChatRef}
+            className="hidden md:block absolute right-0 top-0 bottom-0 z-10 pointer-events-none"
+            style={{ opacity: 0, transform: 'translateX(16px)' }}
+          >
+            <div className="w-[360px] h-full chat-panel overflow-hidden border-l border-white/10 pointer-events-auto">
+              <ChatDrawerInline onClose={closeChat} />
+            </div>
           </div>
         </div>
       </div>
 
       {/* ═══════════════════════════════════════
-         CONTENT BELOW — two-column layout
+         CONTENT BELOW — two-column layout, max-w-[1360px]
          ═══════════════════════════════════════ */}
-      <main className="mx-auto max-w-[1360px] px-4 md:px-6 pt-4 md:pt-6">
-        <div className="flex flex-col xl:flex-row gap-6">
-          {/* Main column — title, info, description, comments */}
+      <main className="mx-auto px-4 md:px-6 pt-4 md:pt-6" style={{ maxWidth: '1360px' }}>
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* ── Main column: title, info, desc, comments ── */}
           <div className="flex-1 min-w-0">
-            <div className={showMiniPlayer ? 'opacity-30 pointer-events-none select-none' : 'space-y-4'}>
+            <div className={showMiniPlayer ? 'opacity-30 pointer-events-none select-none' : 'space-y-5'}>
               <TitleRow title={video.title} isLive={video.isLive} liveViewers={video.liveViewers} />
               <InfoRow
                 creator={video.creator}
@@ -487,10 +550,10 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
             </div>
           </div>
 
-          {/* Related videos sidebar (desktop) */}
+          {/* ── Related sidebar (desktop only) ── */}
           {!isChatOpen && (
-            <div className="hidden xl:block w-[360px] shrink-0">
-              <div className="sticky top-24">
+            <div className="hidden lg:block w-[360px] shrink-0">
+              <div className="sticky top-20">
                 <RelatedSidebar />
               </div>
             </div>
@@ -498,10 +561,8 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
         </div>
       </main>
 
-      {/* ── Floating Mini-Player — only rendered when needed */}
-      {showMiniPlayer && (
-        <MiniPlayer video={video} />
-      )}
+      {/* ── Floating Mini-Player ── */}
+      {showMiniPlayer && <MiniPlayer video={video} />}
 
       {/* ── Mobile/tablet chat drawer ── */}
       <ChatDrawer />
