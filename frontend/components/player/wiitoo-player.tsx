@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import { useUiStore } from '@/lib/store';
@@ -13,7 +13,7 @@ interface WiitooPlayerProps {
   liveViewers?: number;
 }
 
-export function WiitooPlayer({
+const WiitooPlayer = React.memo(function WiitooPlayer({
   src,
   poster,
   isLive = false,
@@ -459,4 +459,6 @@ export function WiitooPlayer({
       </div>
     </div>
   );
-}
+});
+
+export { WiitooPlayer };
