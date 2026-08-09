@@ -1,4 +1,4 @@
-import { WatchPageClient } from './watch-page-client';
+import { WatchPageClient } from './client-wrapper';
 
 interface WatchPageProps {
   params: Promise<{ id: string }>;
