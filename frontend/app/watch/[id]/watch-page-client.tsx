@@ -481,7 +481,7 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
   return (
     <div className="min-h-screen bg-bg-base">
       {/* ═══════════════════════════════════════
-         HEADER — always present, like YouTube
+         HEADER — always present
          ═══════════════════════════════════════ */}
       <Header />
 
@@ -497,60 +497,59 @@ export function WatchPageClient({ videoId }: { videoId: string }) {
       </div>
 
       {/* ═══════════════════════════════════════
-         PLAYER — centered 1280px max, full-width black bg
+         MAIN CONTENT — player + sidebar at same level
          ═══════════════════════════════════════ */}
-      <div className="bg-black">
-        <div
-          ref={playerContainerRef}
-          className="relative mx-auto"
-          style={{ maxWidth: '1280px' }}
-        >
-          <WiitooPlayer
-            src={video.hlsUrl}
-            poster={video.posterUrl}
-            isLive={video.isLive}
-            title={video.title}
-            liveViewers={video.liveViewers}
-          />
-
-          {/* Desktop inline chat — overlays player, GSAP toggled */}
-          <div
-            ref={inlineChatRef}
-            className="hidden md:block absolute right-0 top-0 bottom-0 z-10 pointer-events-none"
-            style={{ opacity: 0, transform: 'translateX(16px)' }}
-          >
-            <div className="w-[360px] h-full chat-panel overflow-hidden border-l border-white/10 pointer-events-auto">
-              <ChatDrawerInline onClose={closeChat} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════
-         CONTENT BELOW — two-column layout, max-w-[1360px]
-         ═══════════════════════════════════════ */}
-      <main className="mx-auto px-4 md:px-6 pt-4 md:pt-6" style={{ maxWidth: '1360px' }}>
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* ── Main column: title, info, desc, comments ── */}
+      <main
+        ref={playerContainerRef}
+        className="mx-auto px-4 md:px-6 pt-4 pb-8"
+        style={{ maxWidth: '1400px' }}
+      >
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+          {/* ── LEFT COLUMN: Player + details ── */}
           <div className="flex-1 min-w-0">
-            <div className={showMiniPlayer ? 'opacity-30 pointer-events-none select-none' : 'space-y-5'}>
-              <TitleRow title={video.title} isLive={video.isLive} liveViewers={video.liveViewers} />
-              <InfoRow
-                creator={video.creator}
-                views={video.views}
-                likes={video.likes}
-                publishedAt={video.publishedAt}
+            {/* Player with rounded corners, naturally in layout */}
+            <div className="relative">
+              <WiitooPlayer
+                src={video.hlsUrl}
+                poster={video.posterUrl}
+                isLive={video.isLive}
+                title={video.title}
+                liveViewers={video.liveViewers}
               />
-              <Description text={video.description} />
-              <CommentsSection
-                comments={comments}
-                totalComments={comments.length + 47}
-                onSeekTo={handleSeekTo}
-              />
+
+              {/* Desktop inline chat — overlays player, GSAP toggled */}
+              <div
+                ref={inlineChatRef}
+                className="hidden md:block absolute right-0 top-0 bottom-0 z-10 pointer-events-none"
+                style={{ opacity: 0, transform: 'translateX(16px)' }}
+              >
+                <div className="w-[360px] h-full chat-panel overflow-hidden border-l border-white/10 pointer-events-auto">
+                  <ChatDrawerInline onClose={closeChat} />
+                </div>
+              </div>
+            </div>
+
+            {/* Below player: title, info, desc, comments */}
+            <div className="mt-4">
+              <div className={showMiniPlayer ? 'opacity-30 pointer-events-none select-none' : 'space-y-5'}>
+                <TitleRow title={video.title} isLive={video.isLive} liveViewers={video.liveViewers} />
+                <InfoRow
+                  creator={video.creator}
+                  views={video.views}
+                  likes={video.likes}
+                  publishedAt={video.publishedAt}
+                />
+                <Description text={video.description} />
+                <CommentsSection
+                  comments={comments}
+                  totalComments={comments.length + 47}
+                  onSeekTo={handleSeekTo}
+                />
+              </div>
             </div>
           </div>
 
-          {/* ── Related sidebar (desktop only) ── */}
+          {/* ── RIGHT COLUMN: Related sidebar at same level as player ── */}
           {!isChatOpen && (
             <div className="hidden lg:block w-[360px] shrink-0">
               <div className="sticky top-20">
